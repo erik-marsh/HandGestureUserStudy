@@ -1,2 +1,5 @@
 build/
 .vscode/
+# distribution of the Leap Motion SDK is prohibited by their license
+# you must provide your own
+LeapSDK/
