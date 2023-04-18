@@ -7,8 +7,11 @@
 #include "LeapSDK/include/Leap.h"
 // #include "raylib-depolluted.h"
 
+#define Font __RAYLIB_FONT_T
 #include "raylib/src/raylib.h"
+#undef Font
 #include "raylib/src/rcamera.h"
+
 
 // Undefine numerical constants with similar names to constants in the LeapSDK.
 // PI in particular has a breaking name collision with Leap::PI.
@@ -18,6 +21,7 @@
 #undef RAD2DEG
 
 #include "Helpers.hpp"
+#include "SimulatedMouse.hpp"
 
 class SampleListener : public Leap::Listener
 {
@@ -356,6 +360,7 @@ int main()
     camera.up = (Vector3){0.0f, 1.0f, 0.0f};
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
+    Input::SimulatedMouse mouse;
 
     SetTargetFPS(60);
 
@@ -365,6 +370,15 @@ int main()
 
         Leap::Frame leapFrame = controller.frame();
         std::string frameString = StringifyFrame(leapFrame);
+
+        if (IsKeyDown(KEY_E)) mouse.MoveRelative(10, 0);
+        if (IsKeyDown(KEY_Q)) mouse.MoveRelative(-10, 0);
+        if (IsKeyDown(KEY_F)) 
+        {
+            //xdo_click_window(xdoCtx)
+            // clicks might be possible through raylib
+            // the real question is: when chrome gets added into the mix, which window is the active one?
+        }
 
         BeginDrawing();
         {
