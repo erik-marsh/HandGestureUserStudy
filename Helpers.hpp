@@ -1,3 +1,5 @@
+#pragma once
+
 #include "raylib-depolluted.h"
 #include "LeapSDK/include/Leap.h"
 
