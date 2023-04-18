@@ -5,7 +5,19 @@
 #include <array>
 
 #include "LeapSDK/include/Leap.h"
-#include "raylib-depolluted.h"
+// #include "raylib-depolluted.h"
+
+#include "raylib/src/raylib.h"
+#include "raylib/src/rcamera.h"
+
+// Undefine numerical constants with similar names to constants in the LeapSDK.
+// PI in particular has a breaking name collision with Leap::PI.
+// (Doesn't math.h define M_PI with sufficient precision anyway?)
+#undef PI  
+#undef DEG2RAD
+#undef RAD2DEG
+
+#include "Helpers.hpp"
 
 class SampleListener : public Leap::Listener
 {
@@ -282,6 +294,53 @@ std::string StringifyFrame(Leap::Frame& frame)
     return ss.str();
 }
 
+namespace Debug
+{
+    constexpr float VECTOR_BASIS_LENGTH = 10.0f;
+
+    constexpr Vector3 VECTOR_ORIGIN = {0.0f, 0.0f, 0.0f};
+    constexpr Vector3 VECTOR_BASIS_I = {VECTOR_BASIS_LENGTH, 0.0f, 0.0f};
+    constexpr Vector3 VECTOR_BASIS_J = {0.0f, VECTOR_BASIS_LENGTH, 0.0f};
+    constexpr Vector3 VECTOR_BASIS_K = {0.0f, 0.0f, VECTOR_BASIS_LENGTH};
+
+    constexpr Color VECTOR_BASIS_I_COLOR = RED;
+    constexpr Color VECTOR_BASIS_J_COLOR = GREEN;
+    constexpr Color VECTOR_BASIS_K_COLOR = BLUE;
+
+    void DrawCartesianBasis()
+    {
+        DrawLine3D(VECTOR_ORIGIN, VECTOR_BASIS_I, VECTOR_BASIS_I_COLOR);
+        DrawLine3D(VECTOR_ORIGIN, VECTOR_BASIS_J, VECTOR_BASIS_J_COLOR);
+        DrawLine3D(VECTOR_ORIGIN, VECTOR_BASIS_K, VECTOR_BASIS_K_COLOR);
+    }
+
+    constexpr float CAMERA_MOVE_SPEED = 0.09f;
+    constexpr float CAMERA_ROTATION_SPEED = 0.03f;
+
+    void UpdateCamera(Camera& camera)
+    {
+
+        if (IsKeyDown(KEY_DOWN)) CameraPitch(&camera, -CAMERA_ROTATION_SPEED, true, false, false);
+        if (IsKeyDown(KEY_UP)) CameraPitch(&camera, CAMERA_ROTATION_SPEED, true, false, false);
+        if (IsKeyDown(KEY_RIGHT)) CameraYaw(&camera, -CAMERA_ROTATION_SPEED, false);
+        if (IsKeyDown(KEY_LEFT)) CameraYaw(&camera, CAMERA_ROTATION_SPEED, false);
+
+        if (IsKeyDown(KEY_W)) CameraMoveForward(&camera, CAMERA_MOVE_SPEED, true);
+        if (IsKeyDown(KEY_A)) CameraMoveRight(&camera, -CAMERA_MOVE_SPEED, true);
+        if (IsKeyDown(KEY_S)) CameraMoveForward(&camera, -CAMERA_MOVE_SPEED, true);
+        if (IsKeyDown(KEY_D)) CameraMoveRight(&camera, CAMERA_MOVE_SPEED, true);
+
+        if (IsKeyDown(KEY_Z))
+        {
+            camera.target = (Vector3){0.0f, 0.0f, 0.0f};
+            camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+        }
+    }
+
+    constexpr int SCREEN_WIDTH = 1600;
+    constexpr int SCREEN_HEIGHT = 900;
+}
+
 int main()
 {
     SampleListener listener;
@@ -289,12 +348,8 @@ int main()
 
     controller.addListener(listener);
 
-    constexpr int screenWidth = 1600;
-    constexpr int screenHeight = 900;
+    InitWindow(Debug::SCREEN_WIDTH, Debug::SCREEN_HEIGHT, "something something idk");
 
-    InitWindow(screenWidth, screenHeight, "something something idk");
-
-    // Camera definitions
     Camera3D camera{};
     camera.position = (Vector3){10.0f, 10.0f, 10.0f};
     camera.target = (Vector3){0.0f, 0.0f, 0.0f};
@@ -302,18 +357,12 @@ int main()
     camera.fovy = 45.0f;
     camera.projection = CAMERA_PERSPECTIVE;
 
-    //DisableCursor();
     SetTargetFPS(60);
 
     while (!WindowShouldClose())
     {
-        UpdateCamera(&camera, CAMERA_FREE);
+        Debug::UpdateCamera(camera);
 
-        if (IsKeyDown('Z'))
-        {
-            camera.target = (Vector3){0.0f, 0.0f, 0.0f};
-            camera.up = (Vector3){0.0f, 1.0f, 0.0f};
-        }
         Leap::Frame leapFrame = controller.frame();
         std::string frameString = StringifyFrame(leapFrame);
 
@@ -322,25 +371,15 @@ int main()
             ClearBackground(LIGHTGRAY);
             BeginMode3D(camera);
             {
-                double currTime = GetTime();
-
-                Vector3 origin = {0.0f, 0.0f, 0.0f};
-                Vector3 basisI = {10.0f, 0.0f, 0.0f};
-                Vector3 basisJ = {0.0f, 10.0f, 0.0f};
-                Vector3 basisK = {0.0f, 0.0f, 10.0f};
-
-                DrawLine3D(origin, basisI, RED);
-                DrawLine3D(origin, basisJ, GREEN);
-                DrawLine3D(origin, basisK, BLUE);
+                Debug::DrawCartesianBasis();
 
                 auto hands = leapFrame.hands();
                 for (auto it = hands.begin(); it != hands.end(); it++)
                 {
                     auto hand = *it;
                     Color col = hand.isLeft() ? ORANGE : VIOLET;
-                    auto pnorm = hand.palmNormal();
-                    Vector3 pnormRaylib = {pnorm.x, pnorm.y, pnorm.z};
-                    DrawLine3D(origin, pnormRaylib, col);
+                    auto palmNormal = Helpers::Vec3LeapToRaylib(hand.palmNormal());
+                    DrawLine3D(Debug::VECTOR_ORIGIN, palmNormal, col);
                 }
             }
             EndMode3D();
