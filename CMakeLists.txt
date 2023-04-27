@@ -10,6 +10,7 @@ add_executable(raylib-test
     window.cpp
     SimulatedMouse.cpp
     xdotool/xdo.c
+    LeapMotionGestureProvider.cpp
 )
 add_compile_options(raylib-test 
     -Wl,-rpath,${PROJECT_SOURCE_DIR}/LeapSDK/lib/x64

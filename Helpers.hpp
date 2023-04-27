@@ -5,14 +5,39 @@
 
 namespace Helpers
 {
-    static Vector3 Vec3LeapToRaylib(const Leap::Vector& inVec)
+    inline Vector3 Vec3LeapToRaylib(const Leap::Vector& inVec)
     {
         Vector3 outVec = {inVec.x, inVec.y, inVec.z};
         return outVec;
     }
 
-    static Leap::Vector Vec3RaylibToLeap(const Vector3& inVec)
+    inline Leap::Vector Vec3RaylibToLeap(const Vector3& inVec)
     {
         return Leap::Vector(inVec.x, inVec.y, inVec.z);
+    }
+
+    inline Leap::Vector ProjectOntoXYPlane(Leap::Vector vec)
+    {
+        vec.z = 0.0f;
+        return vec;
+    }
+
+    inline Leap::Vector ProjectOntoXZPlane(Leap::Vector vec)
+    {
+        vec.y = 0.0f;
+        return vec;
+    }
+
+    inline Leap::Vector ProjectOntoYZPlane(Leap::Vector vec)
+    {
+        vec.x = 0.0f;
+        return vec;
+    }
+
+    inline Leap::Vector ProjectOntoPlane(Leap::Vector vec, Leap::Vector planeNormal)
+    {
+        float scaleFactor = vec.dot(planeNormal);
+        scaleFactor /= planeNormal.magnitudeSquared();
+        return vec - (scaleFactor * planeNormal);
     }
 }
