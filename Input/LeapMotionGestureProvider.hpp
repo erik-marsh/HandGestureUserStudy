@@ -2,7 +2,7 @@
 
 #include <array>
 
-#include "LeapSDK/include/Leap.h"
+#include "../LeapSDK/include/Leap.h"
 
 namespace Input
 {

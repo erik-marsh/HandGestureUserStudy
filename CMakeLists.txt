@@ -8,9 +8,11 @@ add_subdirectory(raylib)
 
 add_executable(raylib-test
     window.cpp
-    SimulatedMouse.cpp
+    Input/SimulatedMouse.cpp
     xdotool/xdo.c
-    LeapMotionGestureProvider.cpp
+    Input/LeapMotionGestureProvider.cpp
+    Debug/LeapDebug.cpp
+    # Debug/RaylibDebug.cpp
 )
 add_compile_options(raylib-test 
     -Wl,-rpath,${PROJECT_SOURCE_DIR}/LeapSDK/lib/x64

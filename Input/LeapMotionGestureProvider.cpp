@@ -1,6 +1,6 @@
 #include "LeapMotionGestureProvider.hpp"
 
-#include "Helpers.hpp"
+#include "../Helpers.hpp"
 
 namespace Input
 {
@@ -18,23 +18,22 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     float xyAngle = Leap::Vector::down().angleTo(xyComp);
     float yzAngle = Leap::Vector::down().angleTo(yzComp);
 
-    float coneAngle = 15.0f * Leap::DEG_TO_RAD; // TODO: should be a constant
+    float coneAngle = 15.0f * Leap::DEG_TO_RAD;  // TODO: should be a constant
     outState.isInClickPose = xyAngle < coneAngle && yzAngle < coneAngle;
 
     // if true return
     // click pose and mouse pose are mutually exclusive
-    if (outState.isInClickPose)
-        return outState;
+    if (outState.isInClickPose) return outState;
 
     // else check if the hand is in the cursor movement pose
-    Leap::Vector referenceVec = inState.isLeft ? Leap::Vector{1.0f, 0.0f, 0.0f} : Leap::Vector{-1.0f, 0.0f, 0.0f};
+    Leap::Vector referenceVec =
+        inState.isLeft ? Leap::Vector{1.0f, 0.0f, 0.0f} : Leap::Vector{-1.0f, 0.0f, 0.0f};
     xyAngle = referenceVec.angleTo(xyComp);
     float xzAngle = referenceVec.angleTo(xzComp);
 
     // if not, return
-    if (xyAngle < coneAngle && xzAngle < coneAngle)
-        return outState;
-    
+    if (xyAngle < coneAngle && xzAngle < coneAngle) return outState;
+
     // calculate finger angles
     Leap::Vector fingerBendPlaneNormal = inState.handDirection.cross(inState.palmNormal);
 
@@ -42,7 +41,7 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     for (auto dir : inState.fingerDirections)
     {
         Leap::Vector projectedDir = Helpers::ProjectOntoPlane(dir, fingerBendPlaneNormal);
-        float angle = inState.handDirection.angleTo(projectedDir); // ?????
+        float angle = inState.handDirection.angleTo(projectedDir);  // ?????
         averageAngle += angle;
     }
 
@@ -55,8 +54,7 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
 
     int sectorIndex = 0;
     // yeah i have no fucking clue what this is supposed to do but it's important
-    while (averageAngle > (((2 * sectorIndex) - 1) * sectorArcLength) / 2)
-        sectorIndex++;
+    while (averageAngle > (((2 * sectorIndex) - 1) * sectorArcLength) / 2) sectorIndex++;
     // correction
     sectorIndex--;
 
@@ -66,4 +64,4 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     return outState;
 }
 
-}
+}  // namespace Input

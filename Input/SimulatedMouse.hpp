@@ -1,6 +1,6 @@
 #pragma once
 
-#include "xdotool/xdo.h"
+#include "../xdotool/xdo.h"
 
 namespace Input
 {
