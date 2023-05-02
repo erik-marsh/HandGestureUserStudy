@@ -12,6 +12,8 @@
 #undef DEG2RAD
 #undef RAD2DEG
 
+#include "../Helpers.hpp"
+
 namespace Debug
 {
 constexpr int SCREEN_WIDTH = 1600;
@@ -100,4 +102,24 @@ inline void UpdateCamera(Camera& camera)
         std::cout << "Looking at XZ plane from below (pos=(1,-10,1))" << std::endl;
     }
 }
+
+inline void DrawCone(const Vector3 coneAxis, const Vector3 circleRotationAxis,
+                     const float coneAngle, const float coneHeight, const Color coneColor)
+{
+    const float coneBaseRadius = coneHeight * std::tan(coneAngle);
+    // const Vector3 heightVector = Helpers::ScaleRaylibVec3(coneAxis, coneHeight);
+    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 0.25f * coneHeight), 0.25f * coneBaseRadius,
+                 circleRotationAxis, 90.0f, coneColor);
+    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 0.50f * coneHeight), 0.50f * coneBaseRadius,
+                 circleRotationAxis, 90.0f, coneColor);
+    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 0.75f * coneHeight), 0.75f * coneBaseRadius,
+                 circleRotationAxis, 90.0f, coneColor);
+    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 1.00f * coneHeight), 1.00f * coneBaseRadius,
+                 circleRotationAxis, 90.0f, coneColor);
+
+    const float hypotenuseLength = coneHeight / std::cos(coneAngle);
+
+    // Vector3 bound1 = Vector3RotateByAxisAngle(coneAngle, )
+}
+
 }  // namespace Debug
