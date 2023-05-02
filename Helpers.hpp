@@ -5,6 +5,11 @@
 
 namespace Helpers
 {
+inline Vector3 ScaleRaylibVec3(const Vector3 inVec, const float scaleFactor)
+{
+    return Vector3{inVec.x * scaleFactor, inVec.y * scaleFactor, inVec.z * scaleFactor};
+}
+
 inline Vector3 Vec3LeapToRaylib(const Leap::Vector& inVec)
 {
     Vector3 outVec = {inVec.x, inVec.y, inVec.z};
