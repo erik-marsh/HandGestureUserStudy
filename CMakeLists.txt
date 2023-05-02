@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 3.22)
-project(raylib-test C CXX)
+project(gesture-driver C CXX)
 
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
 
 add_subdirectory(raylib)
 
-add_executable(raylib-test
+add_executable(gesture-driver
     window.cpp
     Input/SimulatedMouse.cpp
     xdotool/xdo.c
@@ -14,13 +14,13 @@ add_executable(raylib-test
     Debug/LeapDebug.cpp
     # Debug/RaylibDebug.cpp
 )
-add_compile_options(raylib-test 
+add_compile_options(gesture-driver 
     -Wl,-rpath,${PROJECT_SOURCE_DIR}/LeapSDK/lib/x64
 )
-target_compile_features(raylib-test PRIVATE
+target_compile_features(gesture-driver PRIVATE
     cxx_std_20
 )
-target_link_libraries(raylib-test PRIVATE
+target_link_libraries(gesture-driver PRIVATE
     raylib
     ${PROJECT_SOURCE_DIR}/LeapSDK/lib/x64/libLeap.so
     X11
@@ -29,6 +29,6 @@ target_link_libraries(raylib-test PRIVATE
     xkbcommon
     Xi
 )
-target_compile_definitions(raylib-test PUBLIC
+target_compile_definitions(gesture-driver PUBLIC
     ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/"
 )
