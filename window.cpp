@@ -10,6 +10,7 @@
 #define Font __RAYLIB_FONT_T
 #include "raylib/src/raylib.h"
 #undef Font
+#include "raylib/src/raymath.h"
 #include "raylib/src/rcamera.h"
 
 // Undefine numerical constants with similar names to constants in the LeapSDK.
@@ -19,8 +20,8 @@
 #undef DEG2RAD
 #undef RAD2DEG
 
-#include "Debug/RaylibDebug.hpp"
 #include "Debug/LeapDebug.hpp"
+#include "Debug/RaylibDebug.hpp"
 #include "Helpers.hpp"
 #include "Input/LeapMotionGestureProvider.hpp"
 #include "Input/SimulatedMouse.hpp"
@@ -71,7 +72,10 @@ int main()
             ClearBackground(LIGHTGRAY);
             BeginMode3D(camera);
             {
-                // Debug::DrawCartesianBasis();
+                Debug::DrawCartesianBasis();
+                bool hadClickThisFrame = false;
+                bool wasLeftFacingThisFrame = false;
+                bool wasRightFacingThisFrame = false;
 
                 Leap::HandList hands = leapFrame.hands();
                 for (auto it = hands.begin(); it != hands.end(); it++)
@@ -98,8 +102,25 @@ int main()
 
                     DrawLine3D(Debug::VECTOR_ORIGIN, Helpers::Vec3LeapToRaylib(state.palmNormal),
                                BLACK);
-                    Debug::DrawVectorDecomposition(Helpers::Vec3LeapToRaylib(state.palmNormal),
-                                                   true);
+                    // Debug::DrawVectorDecomposition(Helpers::Vec3LeapToRaylib(state.palmNormal),
+                    //                                true);
+
+                    // Vector3 wrist =
+                    // Vector3Normalize(Helpers::Vec3LeapToRaylib(hand.wristPosition()));
+                    // DrawLine3D(Debug::VECTOR_ORIGIN, wrist, BLACK);
+
+                    // the combination of the palm normal and the vector bases
+                    // yields four orthogonal vectors
+                    // the y basis is always the negative of the palm normal
+                    DrawLine3D(Debug::VECTOR_ORIGIN,
+                               (Helpers::Vec3LeapToRaylib(hand.basis().xBasis)),
+                               Debug::VECTOR_BASIS_I_COLOR);
+                    DrawLine3D(Debug::VECTOR_ORIGIN,
+                               (Helpers::Vec3LeapToRaylib(hand.basis().yBasis)),
+                               Debug::VECTOR_BASIS_J_COLOR);
+                    DrawLine3D(Debug::VECTOR_ORIGIN,
+                               (Helpers::Vec3LeapToRaylib(hand.basis().zBasis)),
+                               Debug::VECTOR_BASIS_K_COLOR);
 
                     Input::ProcessedHandState processed = Input::ProcessHandState(state);
 
@@ -107,7 +128,32 @@ int main()
                        << "    Cursor direction: (" << processed.cursorDirectionX << ", "
                        << processed.cursorDirectionY << "); "
                        << "    Clicked?: " << processed.isInClickPose << "\n\n";
+
+                    if (processed.isInClickPose) hadClickThisFrame = true;
+                    if (state.palmNormal.x > 0.0f &&
+                        Input::IsVectorInCone(Leap::Vector{1.0f, 0.0f, 0.0f},
+                                              Input::TOLERANCE_CONE_ANGLE_RADIANS,
+                                              state.palmNormal))
+                        wasRightFacingThisFrame = true;
+                    if (state.palmNormal.x < 0.0f &&
+                        Input::IsVectorInCone(Leap::Vector{-1.0f, 0.0f, 0.0f},
+                                              Input::TOLERANCE_CONE_ANGLE_RADIANS,
+                                              state.palmNormal))
+                        wasLeftFacingThisFrame = true;
                 }
+
+                // draw click cone
+                // Color clickColor = hadClickThisFrame ? GREEN : BLACK;
+                // Debug::DrawCone(Vector3{0.0f, -1.0f, 0.0f}, Debug::VECTOR_BASIS_I,
+                //                 Input::TOLERANCE_CONE_ANGLE_RADIANS, 2.0f, clickColor);
+
+                // // draw recognition cones
+                // Debug::DrawCone(Vector3{1.0f, 0.0f, 0.0f}, Debug::VECTOR_BASIS_J,
+                //                 Input::TOLERANCE_CONE_ANGLE_RADIANS, 2.0f,
+                //                 wasRightFacingThisFrame ? GREEN : BLACK);
+                // Debug::DrawCone(Vector3{-1.0f, 0.0f, 0.0f}, Debug::VECTOR_BASIS_J,
+                //                 Input::TOLERANCE_CONE_ANGLE_RADIANS, 2.0f,
+                //                 wasLeftFacingThisFrame ? GREEN : BLACK);
             }
             EndMode3D();
 
