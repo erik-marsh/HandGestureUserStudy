@@ -1,3 +1,5 @@
+#pragma once
+
 #define Font __RAYLIB_FONT_T
 #include "../raylib/src/raylib.h"
 #undef Font
@@ -63,11 +65,39 @@ inline void UpdateCamera(Camera& camera)
     if (IsKeyDown(KEY_A)) CameraMoveRight(&camera, -CAMERA_MOVE_SPEED, true);
     if (IsKeyDown(KEY_S)) CameraMoveForward(&camera, -CAMERA_MOVE_SPEED, true);
     if (IsKeyDown(KEY_D)) CameraMoveRight(&camera, CAMERA_MOVE_SPEED, true);
+    if (IsKeyDown(KEY_SPACE)) CameraMoveUp(&camera, CAMERA_MOVE_SPEED);
+    if (IsKeyDown(KEY_LEFT_SHIFT)) CameraMoveUp(&camera, -CAMERA_MOVE_SPEED);
 
-    if (IsKeyDown(KEY_Z))
+    if (IsKeyDown(KEY_KP_1))
     {
-        camera.target = (Vector3){0.0f, 0.0f, 0.0f};
-        camera.up = (Vector3){0.0f, 1.0f, 0.0f};
+        camera.target = Vector3{0.0f, 0.0f, 0.0f};
+        camera.up = Vector3{0.0f, 1.0f, 0.0f};
+        camera.position = Vector3{10.0f, 0.0f, 0.0f};
+        std::cout << "Looking at YZ plane (pos=(10,0,0))" << std::endl;
+    }
+
+    if (IsKeyDown(KEY_KP_2))
+    {
+        camera.target = Vector3{0.0f, 0.0f, 0.0f};
+        camera.up = Vector3{0.0f, 1.0f, 0.0f};
+        camera.position = Vector3{0.0f, 0.0f, 10.0f};
+        std::cout << "Looking at XY plane (pos=(0,0,10))" << std::endl;
+    }
+
+    if (IsKeyDown(KEY_KP_3))
+    {
+        camera.target = Vector3{0.0f, 0.0f, 0.0f};
+        camera.up = Vector3{0.0f, 1.0f, 0.0f};
+        camera.position = Vector3{1.0f, 10.0f, 1.0f};
+        std::cout << "Looking at XZ plane from above (pos=(1,10,1))" << std::endl;
+    }
+
+    if (IsKeyDown(KEY_KP_4))
+    {
+        camera.target = Vector3{0.0f, 0.0f, 0.0f};
+        camera.up = Vector3{0.0f, 1.0f, 0.0f};
+        camera.position = Vector3{1.0f, -10.0f, 1.0f};
+        std::cout << "Looking at XZ plane from below (pos=(1,-10,1))" << std::endl;
     }
 }
 }  // namespace Debug
