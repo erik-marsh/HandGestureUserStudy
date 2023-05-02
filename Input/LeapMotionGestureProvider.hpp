@@ -7,8 +7,9 @@
 namespace Input
 {
 
-// namespace
-// {
+constexpr float TOLERANCE_CONE_ANGLE_DEGREES = 25.0f;
+constexpr float TOLERANCE_CONE_ANGLE_RADIANS = TOLERANCE_CONE_ANGLE_DEGREES * 0.0174532925f;
+
 struct UnprocessedHandState
 {
     // is the hand currently being tracked?
@@ -37,9 +38,8 @@ struct ProcessedHandState
     float cursorDirectionY;
 };
 
+bool IsVectorInCone(Leap::Vector coneAxis, float coneAngle, Leap::Vector vector);
 ProcessedHandState ProcessHandState(UnprocessedHandState& inState);
-
-// }  // namespace
 
 class LeapMotionGestureProvider
 {
