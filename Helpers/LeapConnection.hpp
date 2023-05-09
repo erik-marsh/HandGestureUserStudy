@@ -22,28 +22,28 @@ constexpr bool ENABLE_DEBUG_PRINT = true;
 constexpr bool ENABLE_DEBUG_PRINT = false;
 #endif
 
-void DebugPrint(const std::string& message);
+void DebugPrint(const std::string &message);
 
 std::string GetEnumString(eLeapRS res);
 
 class LeapConnection
 {
    public:
-    LeapConnection();           // OpenConnection()
-    virtual ~LeapConnection();  // CloseConnection(), DestroyConnection()
+    LeapConnection();
+    virtual ~LeapConnection();
 
     bool IsConnected() const;
-    LEAP_TRACKING_EVENT* GetFrame() const;
-    LEAP_DEVICE_INFO* GetDeviceProperties() const;
+    LEAP_TRACKING_EVENT *GetFrame() const;
+    LEAP_DEVICE_INFO *GetDeviceProperties() const;
 
    private:
-    static LeapConnection* m_instance;
+    static LeapConnection *m_instance;
 
     static bool m_isConnected;
     static volatile bool m_isRunning;
     static LEAP_CONNECTION m_connection;
-    static LEAP_TRACKING_EVENT* m_lastFrame;
-    static LEAP_DEVICE_INFO* m_lastDevice;
+    static LEAP_TRACKING_EVENT *m_lastFrame;
+    static LEAP_DEVICE_INFO *m_lastDevice;
     static HANDLE m_pollingThread;
     static CRITICAL_SECTION m_dataLock;
 
@@ -64,7 +64,8 @@ class LeapConnection
     static void OnConfigChange(const LEAP_CONFIG_CHANGE_EVENT *config_change_event);
     static void OnConfigResponse(const LEAP_CONFIG_RESPONSE_EVENT *config_response_event);
     static void OnImage(const LEAP_IMAGE_EVENT *image_event);
-    static void OnPointMappingChange(const LEAP_POINT_MAPPING_CHANGE_EVENT *point_mapping_change_event);
+    static void OnPointMappingChange(
+        const LEAP_POINT_MAPPING_CHANGE_EVENT *point_mapping_change_event);
     static void OnHeadPose(const LEAP_HEAD_POSE_EVENT *head_pose_event);
     static void OnIMU(const LEAP_IMU_EVENT *imu_event);
     static void OnTrackingMode(const LEAP_TRACKING_MODE_EVENT *mode_event);

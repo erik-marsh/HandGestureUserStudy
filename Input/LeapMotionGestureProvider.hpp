@@ -2,8 +2,8 @@
 
 #include <array>
 
-#include "../LeapSDK/include/LeapC.h"
 #include "../Helpers/Vector3Common.hpp"
+#include "../LeapSDK/include/LeapC.h"
 
 namespace Input
 {
@@ -39,7 +39,8 @@ struct ProcessedHandState
     float cursorDirectionY;
 };
 
-bool IsVectorInCone(Helpers::Vector3Common coneAxis, float coneAngle, Helpers::Vector3Common vector);
+bool IsVectorInCone(Helpers::Vector3Common coneAxis, float coneAngle,
+                    Helpers::Vector3Common vector);
 ProcessedHandState ProcessHandState(UnprocessedHandState& inState);
 
 class LeapMotionGestureProvider

@@ -95,5 +95,4 @@ Vector3Common Vector3Common::ProjectOntoYZPlane(Vector3Common vec)
     return Vector3Common(0.0f, vec.m_vec.y, vec.m_vec.z);
 }
 
-
 }  // namespace Helpers

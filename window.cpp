@@ -20,8 +20,8 @@
 
 #include "Debug/LeapDebug.hpp"
 #include "Debug/RaylibDebug.hpp"
-#include "Helpers/Vector3Common.hpp"
 #include "Helpers/LeapConnection.hpp"
+#include "Helpers/Vector3Common.hpp"
 #include "Input/LeapMotionGestureProvider.hpp"
 #include "Input/SimulatedMouse.hpp"
 
