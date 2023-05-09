@@ -3,6 +3,7 @@
 #define Font __RAYLIB_FONT_T
 #include "../raylib/src/raylib.h"
 #undef Font
+#include "../raylib/src/raymath.h"
 #include "../raylib/src/rcamera.h"
 
 // Undefine numerical constants with similar names to constants in the LeapSDK.
@@ -11,8 +12,6 @@
 #undef PI
 #undef DEG2RAD
 #undef RAD2DEG
-
-#include "../Helpers.hpp"
 
 namespace Debug
 {
@@ -107,19 +106,14 @@ inline void DrawCone(const Vector3 coneAxis, const Vector3 circleRotationAxis,
                      const float coneAngle, const float coneHeight, const Color coneColor)
 {
     const float coneBaseRadius = coneHeight * std::tan(coneAngle);
-    // const Vector3 heightVector = Helpers::ScaleRaylibVec3(coneAxis, coneHeight);
-    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 0.25f * coneHeight), 0.25f * coneBaseRadius,
+    DrawCircle3D(Vector3Scale(coneAxis, 0.25f * coneHeight), 0.25f * coneBaseRadius,
                  circleRotationAxis, 90.0f, coneColor);
-    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 0.50f * coneHeight), 0.50f * coneBaseRadius,
+    DrawCircle3D(Vector3Scale(coneAxis, 0.50f * coneHeight), 0.50f * coneBaseRadius,
                  circleRotationAxis, 90.0f, coneColor);
-    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 0.75f * coneHeight), 0.75f * coneBaseRadius,
+    DrawCircle3D(Vector3Scale(coneAxis, 0.75f * coneHeight), 0.75f * coneBaseRadius,
                  circleRotationAxis, 90.0f, coneColor);
-    DrawCircle3D(Helpers::ScaleRaylibVec3(coneAxis, 1.00f * coneHeight), 1.00f * coneBaseRadius,
+    DrawCircle3D(Vector3Scale(coneAxis, 1.00f * coneHeight), 1.00f * coneBaseRadius,
                  circleRotationAxis, 90.0f, coneColor);
-
-    const float hypotenuseLength = coneHeight / std::cos(coneAngle);
-
-    // Vector3 bound1 = Vector3RotateByAxisAngle(coneAngle, )
 }
 
 }  // namespace Debug

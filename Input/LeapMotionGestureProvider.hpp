@@ -2,7 +2,8 @@
 
 #include <array>
 
-#include "../LeapSDK/include/Leap.h"
+#include "../LeapSDK/include/LeapC.h"
+#include "../Helpers/Vector3Common.hpp"
 
 namespace Input
 {
@@ -17,16 +18,16 @@ struct UnprocessedHandState
     bool isLeft;
 
     // used to determine which gestures we need to recognize
-    Leap::Vector palmNormal;
+    Helpers::Vector3Common palmNormal;
 
     // used to determine the direction to move the mouse
     // (this is actually post-processing)
     // std::array<float, 4> fingerAngles;
-    std::array<Leap::Vector, 4> fingerDirections;
+    std::array<Helpers::Vector3Common, 4> fingerDirections;
 
     // other values useful for debug visualizations
-    Leap::Vector palmPosition;
-    Leap::Vector handDirection;
+    Helpers::Vector3Common palmPosition;
+    Helpers::Vector3Common handDirection;
 };
 
 struct ProcessedHandState
@@ -38,7 +39,7 @@ struct ProcessedHandState
     float cursorDirectionY;
 };
 
-bool IsVectorInCone(Leap::Vector coneAxis, float coneAngle, Leap::Vector vector);
+bool IsVectorInCone(Helpers::Vector3Common coneAxis, float coneAngle, Helpers::Vector3Common vector);
 ProcessedHandState ProcessHandState(UnprocessedHandState& inState);
 
 class LeapMotionGestureProvider
