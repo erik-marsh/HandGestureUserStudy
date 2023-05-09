@@ -1,14 +1,10 @@
 #pragma once
 
-namespace Input
+namespace Input::Mouse
 {
-class SimulatedMouse
-{
-   public:
-    SimulatedMouse();
-    ~SimulatedMouse();
 
-    void Warp(const int x, const int y) const;
-    void MoveRelative(const int x, const int y) const;
-};
-}  // namespace Input
+void MoveRelative(int x, int y);
+void MoveAbsolute(int x, int y);
+void LeftClick();
+
+}  // namespace Input::Mouse
