@@ -3,18 +3,12 @@
 namespace Input
 {
 
-SimulatedMouse::SimulatedMouse() : m_xdoContext(xdo_new(nullptr)) {}
+SimulatedMouse::SimulatedMouse() {}
 
-SimulatedMouse::~SimulatedMouse() { xdo_free(m_xdoContext); }
+SimulatedMouse::~SimulatedMouse() {}
 
-void SimulatedMouse::Warp(const int x, const int y) const
-{
-    xdo_move_mouse_relative(m_xdoContext, x, y);
-}
+void SimulatedMouse::Warp(const int x, const int y) const {}
 
-void SimulatedMouse::MoveRelative(const int x, const int y) const
-{
-    xdo_move_mouse_relative(m_xdoContext, x, y);
-}
+void SimulatedMouse::MoveRelative(const int x, const int y) const {}
 
 }  // namespace Input
