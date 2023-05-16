@@ -6,6 +6,8 @@
 #undef DEG2RAD
 #undef RAD2DEG
 
+#include <ostream>
+
 namespace Helpers
 {
 
@@ -43,5 +45,9 @@ class Vector3Common
     // We use the raylib Vector3 type internally so it can be passed to raymath functions
     Vector3 m_vec;
 };
+
+std::ostream& operator<<(std::ostream& stream, const Vector3Common& vec);
+std::ostream& operator<<(std::ostream& stream, const Vector3& vec);
+std::ostream& operator<<(std::ostream& stream, const LEAP_VECTOR& vec);
 
 }  // namespace Helpers

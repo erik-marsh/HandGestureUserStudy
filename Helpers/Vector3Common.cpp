@@ -64,7 +64,7 @@ Vector3Common Vector3Common::CrossProduct(Vector3Common a, Vector3Common b)
 float Vector3Common::Angle(Vector3Common from, Vector3Common to)
 {
     Vector3 rayFrom = from.AsRaylib();
-    Vector3 rayTo = from.AsRaylib();
+    Vector3 rayTo = to.AsRaylib();
     return Vector3Angle(rayFrom, rayTo);
 }
 
@@ -93,6 +93,24 @@ Vector3Common Vector3Common::ProjectOntoXZPlane(Vector3Common vec)
 Vector3Common Vector3Common::ProjectOntoYZPlane(Vector3Common vec)
 {
     return Vector3Common(0.0f, vec.m_vec.y, vec.m_vec.z);
+}
+
+std::ostream& operator<<(std::ostream& stream, const Vector3Common& vec)
+{
+    stream << "(x=" << vec.X() << ", y=" << vec.Y() << ", z=" << vec.Z() << ")";
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const Vector3& vec)
+{
+    stream << Vector3Common(vec);
+    return stream;
+}
+
+std::ostream& operator<<(std::ostream& stream, const LEAP_VECTOR& vec)
+{
+    stream << Vector3Common(vec);
+    return stream;
 }
 
 }  // namespace Helpers
