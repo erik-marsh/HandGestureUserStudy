@@ -65,9 +65,10 @@ target_compile_definitions(${MAIN_EXECUTABLE_NAME}
 # ========== Virtual mouse input test configuration ==========
 # ============================================================
 
-add_executable(${TEST_VIRTUAL_MOUSE} Tests/VirtualMouseTest.cpp Input/SimulatedMouse.cpp)
+add_executable(${TEST_VIRTUAL_MOUSE} Input/SimulatedMouse.cpp Tests/VirtualMouseTest.cpp)
 
-copy_file_to_output_directory(${TEST_VIRTUAL_MOUSE} ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
+copy_file_to_output_directory(${TEST_VIRTUAL_MOUSE}
+                              ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
 
 target_compile_features(${TEST_VIRTUAL_MOUSE} PRIVATE cxx_std_20)
 
