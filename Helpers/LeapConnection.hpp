@@ -16,10 +16,11 @@
 namespace Helpers
 {
 
+constexpr bool ENABLE_DEBUG_PRINT =
 #ifdef _DEBUG
-constexpr bool ENABLE_DEBUG_PRINT = true;
+    true;
 #else
-constexpr bool ENABLE_DEBUG_PRINT = false;
+    false;
 #endif
 
 void DebugPrint(const std::string &message);
