@@ -26,21 +26,23 @@ int ToNormalizedAbsoluteCoordinates(int pixels)
         metricIndex = SM_CXSCREEN;
     else if constexpr (coord == Coordinate::Y)
         metricIndex = SM_CYSCREEN;
-    
+
     float scaleFactor = 65536.0f / GetSystemMetrics(metricIndex);
     return static_cast<int>(scaleFactor * pixels);
 }
 }  // namespace
 
-// TODO: does not seem to work...
+// Note: In practice, the dx and dy are approximate
+// If you pass in (10, 10), you won't necessarily get a differential of (10, 10),
+// but it will be pretty close (+/-3).
 void MoveRelative(int x, int y)
 {
     INPUT input;
     std::memset(&input, 0, sizeof(INPUT));
     input.type = INPUT_MOUSE;
     input.mi.dwFlags = MOUSEEVENTF_MOVE;
-    input.mi.dx = ToNormalizedAbsoluteCoordinates<Coordinate::X>(x);
-    input.mi.dy = ToNormalizedAbsoluteCoordinates<Coordinate::Y>(y);
+    input.mi.dx = x;
+    input.mi.dy = y;
     SendInput(1, &input, sizeof(INPUT));
 }
 
@@ -62,6 +64,13 @@ void LeftClick()
     input.type = INPUT_MOUSE;
     input.mi.dwFlags = MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP;
     SendInput(1, &input, sizeof(INPUT));
+}
+
+std::pair<int, int> QueryMousePosition()
+{
+    POINT point;
+    GetCursorPos(&point);
+    return {point.x, point.y};
 }
 
 }  // namespace Input::Mouse
