@@ -40,8 +40,13 @@ add_subdirectory(raylib)
 # ===================================================
 add_executable(
     ${MAIN_EXECUTABLE_NAME}
-    Debug/LeapDebug.cpp Helpers/LeapConnection.cpp Helpers/Vector3Common.cpp
-    Input/LeapMotionGestureProvider.cpp Input/SimulatedMouse.cpp window.cpp)
+    Debug/LeapDebug.cpp
+    Debug/RaylibDebug.cpp
+    Helpers/LeapConnection.cpp
+    Helpers/Vector3Common.cpp
+    Input/LeapMotionGestureProvider.cpp
+    Input/SimulatedMouse.cpp
+    window.cpp)
 
 copy_file_to_output_directory(${MAIN_EXECUTABLE_NAME}
                               ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
