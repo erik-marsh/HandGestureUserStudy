@@ -8,8 +8,19 @@
 namespace Input
 {
 
+///////////////////////////////////////////////////////////////////////////////
+// Constants
+///////////////////////////////////////////////////////////////////////////////
+
+constexpr float DEG_TO_RAD = 0.0174532925f;   // pi / 180
+constexpr float RAD_TO_DEG = 57.2957795131f;  // 180 / pi
+
 constexpr float TOLERANCE_CONE_ANGLE_DEGREES = 25.0f;
-constexpr float TOLERANCE_CONE_ANGLE_RADIANS = TOLERANCE_CONE_ANGLE_DEGREES * 0.0174532925f;
+constexpr float TOLERANCE_CONE_ANGLE_RADIANS = TOLERANCE_CONE_ANGLE_DEGREES * DEG_TO_RAD;
+
+///////////////////////////////////////////////////////////////////////////////
+// Structures
+///////////////////////////////////////////////////////////////////////////////
 
 struct UnprocessedHandState
 {
@@ -39,14 +50,12 @@ struct ProcessedHandState
     float cursorDirectionY;
 };
 
+///////////////////////////////////////////////////////////////////////////////
+// Data processing
+///////////////////////////////////////////////////////////////////////////////
+
 bool IsVectorInCone(Helpers::Vector3Common coneAxis, float coneAngle,
                     Helpers::Vector3Common vector);
 ProcessedHandState ProcessHandState(UnprocessedHandState& inState);
-
-class LeapMotionGestureProvider
-{
-   public:
-   private:
-};
 
 }  // namespace Input
