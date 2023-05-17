@@ -5,6 +5,8 @@
 
 #include <cmath>
 
+#include <iostream>
+
 using Vec3 = Helpers::Vector3Common;
 
 namespace Input
@@ -65,11 +67,33 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     Vec3 fingerBendPlaneNormal = Vec3::CrossProduct(inState.handDirection, inState.palmNormal);
 
     float averageAngle = 0.0f;
+    float averageSigningAngle = 0.0f;
     for (auto dir : inState.fingerDirections)
     {
         Vec3 projectedDir = Vec3::ProjectOntoPlane(dir, fingerBendPlaneNormal);
-        // float angle = inState.handDirection.angleTo(projectedDir);  // ?????
-        float angle = Vec3::Angle(inState.handDirection, projectedDir);  // ?????
+
+        // this is some weird hack to make signed angles work
+        // raylib does not return signed angles from its vector angle method
+        // but we want signed angles so we know when to clamp to 0 and 180 degrees
+        // (since one hand can only be responsible for 180 degrees of movement)
+        // we can trivially figure this out, however
+        // if the angle from the palm normal is > 90 degrees,
+        // then we can safely invert the angle.
+        // there might be a bit of imprecision, but this works pretty well.
+        float angle = Vec3::Angle(inState.handDirection, projectedDir);
+        float signingAngle = Vec3::Angle(inState.palmNormal, projectedDir);
+        if (signingAngle > M_PI / 2.0f)
+            angle *= -1.0f;
+
+        if (angle < 0.0f)
+        {
+            // clamp to 0 or 180, whichever is closer
+            if (angle > (M_PI / 2.0f) * -1.0f)
+                angle = 0.0f;
+            else
+                angle = M_PI;
+        }
+
         averageAngle += angle;
     }
 
