@@ -41,6 +41,9 @@ class Vector3Common
     static Vector3Common ProjectOntoXZPlane(Vector3Common vec);
     static Vector3Common ProjectOntoYZPlane(Vector3Common vec);
 
+    static Vector3Common Normalize(Vector3Common vec);
+    static Vector3Common SetMagnitude(Vector3Common vec, float newMagnitude);
+
    private:
     // We use the raylib Vector3 type internally so it can be passed to raymath functions
     Vector3 m_vec;

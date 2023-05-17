@@ -95,6 +95,21 @@ Vector3Common Vector3Common::ProjectOntoYZPlane(Vector3Common vec)
     return Vector3Common(0.0f, vec.m_vec.y, vec.m_vec.z);
 }
 
+Vector3Common Vector3Common::Normalize(Vector3Common vec)
+{
+    Vector3 res = vec.AsRaylib();
+    res = Vector3Normalize(res);
+    return Vector3Common(res);
+}
+
+Vector3Common Vector3Common::SetMagnitude(Vector3Common vec, float newMagnitude)
+{
+    Vector3 res = vec.AsRaylib();
+    res = Vector3Normalize(res);
+    res = Vector3Scale(res, newMagnitude);
+    return Vector3Common(res);
+}
+
 std::ostream& operator<<(std::ostream& stream, const Vector3Common& vec)
 {
     stream << "(x=" << vec.X() << ", y=" << vec.Y() << ", z=" << vec.Z() << ")";
