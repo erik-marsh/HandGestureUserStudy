@@ -3,6 +3,7 @@
 #define Font __RAYLIB_FONT_T
 #include "../raylib/src/raylib.h"
 #undef Font
+#include "../Helpers/Vector3Common.hpp"
 #include "../LeapSDK/include/LeapC.h"
 #include "../raylib/src/raymath.h"
 #include "../raylib/src/rcamera.h"
@@ -49,5 +50,9 @@ void DrawPlane(Vector3 centerPos, Vector3 vec1, Vector3 vec2, float size, Color 
 void DrawText3D(__RAYLIB_FONT_T font, const char* text, Vector3 position, float fontSize,
                 float fontSpacing, float lineSpacing, bool backface, Color tint,
                 float rotationAngle, Vector3 rotationAxis);
+
+Helpers::Vector3Common ProjectLeapIntoRaylibSpace(Helpers::Vector3Common vec,
+                                                  Helpers::Vector3Common newOrigin,
+                                                  float scaleFactor);
 
 }  // namespace Debug

@@ -5,6 +5,8 @@
 
 #include "../Helpers/Vector3Common.hpp"
 
+using Vec3 = Helpers::Vector3Common;
+
 namespace Debug
 {
 
@@ -31,7 +33,7 @@ void DrawVectorDecomposition(Vector3 vec, bool shouldSumVectors)
     }
 }
 
-void UpdateCamera(Camera& camera)
+void UpdateCamera(Camera &camera)
 {
     if (IsKeyDown(KEY_DOWN)) CameraPitch(&camera, -CAMERA_ROTATION_SPEED, true, false, false);
     if (IsKeyDown(KEY_UP)) CameraPitch(&camera, CAMERA_ROTATION_SPEED, true, false, false);
@@ -91,30 +93,92 @@ void DrawCone(const Vector3 coneAxis, const Vector3 circleRotationAxis, const fl
     }
 }
 
-void DrawHand(LEAP_HAND& hand)
+void DrawHand(LEAP_HAND &hand)
 {
-    Helpers::Vector3Common armEnd(hand.arm.next_joint);
+    // some common values used throughout the function
+    Vec3 armEnd(hand.arm.next_joint);
+    constexpr float scaleFactor = 0.01f;
+
+    Vec3 palmNormal = Vec3(hand.palm.normal);
+    Vec3 palmDirection = Vec3(hand.palm.direction);
 
     // Draw all of the bones of the index, middle, ring, and pinky fingers.
     for (int i = 0; i < 5; i++)
     {
         for (int j = 0; j < 4; j++)
         {
-            Helpers::Vector3Common boneStart(hand.digits[i].bones[j].prev_joint);
-            Helpers::Vector3Common boneEnd(hand.digits[i].bones[j].next_joint);
+            Vec3 boneStart(hand.digits[i].bones[j].prev_joint);
+            Vec3 boneEnd(hand.digits[i].bones[j].next_joint);
 
-            boneStart = Helpers::Vector3Common::Subtract(boneStart, armEnd);
-            boneEnd = Helpers::Vector3Common::Subtract(boneEnd, armEnd);
-
-            constexpr float scaleFactor = 0.01f;
-            boneStart = Helpers::Vector3Common::ScalarMultiply(boneStart, scaleFactor);
-            boneEnd = Helpers::Vector3Common::ScalarMultiply(boneEnd, scaleFactor);
+            boneStart = ProjectLeapIntoRaylibSpace(boneStart, armEnd, scaleFactor);
+            boneEnd = ProjectLeapIntoRaylibSpace(boneEnd, armEnd, scaleFactor);
 
             // Since we do calculations on the distal bone, we highlight it.
             Color color = j == 3 ? RED : BLACK;
             DrawLine3D(boneStart.AsRaylib(), boneEnd.AsRaylib(), color);
         }
     }
+
+    // Draw planes that indicate how each individual finger bend angle is being measured
+    float size = 3.0f;
+    float opacity = 0.35f;
+
+    Color color = GREEN;
+    color.a = static_cast<unsigned char>(opacity * 255);
+
+    // NOTE: re-retrieval of palm normal
+    Vec3 pn = Vec3::SetMagnitude(palmNormal, size);
+    Vec3 pd = Vec3::SetMagnitude(palmDirection, size);
+    Vec3 cr = Vec3::CrossProduct(pn, pd);
+    cr = Vec3::SetMagnitude(cr, size);
+    Vec3 crInverse = Vec3::ScalarMultiply(cr, -1.0f);
+
+    DrawLine3D(Debug::VECTOR_ORIGIN, palmNormal.AsRaylib(), BLUE);
+
+    Vec3 palmPos = Vec3(hand.palm.position);
+    palmPos = ProjectLeapIntoRaylibSpace(palmPos, armEnd, scaleFactor);
+
+    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), cr.AsRaylib(), size, color);
+    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), crInverse.AsRaylib(), size, color);
+
+    // Draw text to show each individual finger angle as well as the average
+    const Vec3 textOrigin{4.0f, 6.0f, 0.0f};
+    __RAYLIB_FONT_T font = GetFontDefault();
+    float averageAngle = 0.0f;
+    constexpr float fontSize = 3.0f;
+    constexpr float fontSpacing = 1.0f;
+    constexpr float lineSpacing = 0.0f;
+    constexpr float textRotationAngle = 90.0f;
+    const Vector3 textRotationAxis{1.0f, 0.0f, 0.0f};
+
+    for (int i = 1; i < 5; i++)
+    {
+        LEAP_DIGIT finger = hand.digits[i];
+        Vec3 distalTip(finger.distal.next_joint);
+        Vec3 distalBase(finger.distal.prev_joint);
+        auto dir = Vec3::Subtract(distalTip, distalBase);
+        Vec3 fingerBendPlaneNormal = Vec3::CrossProduct(palmDirection, palmNormal);
+
+        Vec3 projectedDir = Vec3::ProjectOntoPlane(dir, fingerBendPlaneNormal);
+        float angle =
+            Vec3::Angle(palmDirection, projectedDir) * 57.2957795131f;  // Input::RAD_TO_DEG;
+
+        Vec3 textPos = {textOrigin.X(), textOrigin.Y() - ((i - 1) * 0.5f), textOrigin.Z()};
+
+        const char *opt = TextFormat("angle=%.0f", angle);
+        Debug::DrawText3D(font, opt, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
+                          RED, textRotationAngle, textRotationAxis);
+
+        Vec3 normalizedTip = ProjectLeapIntoRaylibSpace(distalTip, armEnd, scaleFactor);
+        DrawLine3D(normalizedTip.AsRaylib(), textPos.AsRaylib(), WHITE);
+
+        averageAngle += angle;
+    }
+    averageAngle /= 4.0f;
+    const char *text = TextFormat("     average angle=%.0f", averageAngle);
+    Vec3 textPos = {textOrigin.X(), textOrigin.Y() - 2.0f, textOrigin.Z()};
+    Debug::DrawText3D(font, text, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
+                      RED, textRotationAngle, textRotationAxis);
 }
 
 void DrawPlane(Vector3 centerPos, Vector3 pd, Vector3 cr, float size, Color color)
@@ -222,7 +286,7 @@ void DrawTextCodepoint3D(__RAYLIB_FONT_T font, int codepoint, Vector3 position, 
 }  // namespace
 
 // Draw a 2D text in 3D space
-void DrawText3D(__RAYLIB_FONT_T font, const char* text, Vector3 position, float fontSize,
+void DrawText3D(__RAYLIB_FONT_T font, const char *text, Vector3 position, float fontSize,
                 float fontSpacing, float lineSpacing, bool backface, Color tint,
                 float rotationAngle, Vector3 rotationAxis)
 {
@@ -272,6 +336,12 @@ void DrawText3D(__RAYLIB_FONT_T font, const char* text, Vector3 position, float 
 
         i += codepointByteCount;  // Move text bytes counter to next codepoint
     }
+}
+
+Vec3 ProjectLeapIntoRaylibSpace(Vec3 vec, Vec3 newOrigin, float scaleFactor)
+{
+    Vec3 out = Vec3::Subtract(vec, newOrigin);
+    return Vec3::ScalarMultiply(out, scaleFactor);
 }
 
 }  // namespace Debug

@@ -80,7 +80,6 @@ int main()
             state.isTracking = true;
             state.isLeft = hand.type == eLeapHandType_Left;
             state.palmNormal = Vec3(hand.palm.normal);
-            state.palmPosition = Vec3(hand.palm.position);
             state.handDirection = Vec3(hand.palm.direction);
 
             for (int i = 1; i < 5; i++)
@@ -92,66 +91,6 @@ int main()
                 // direction of the distal bone of the finger
                 state.fingerDirections[i - 1] = Vec3::Subtract(distalTip, distalBase);
             }
-
-            // debug text drawing for hand angles
-            // TODO: a lot of this is duplicated, prefer to get this in ProcessedHandState
-            // TODO: need a method that transforms Leap Motion space to a usable raylib space
-            const Vec3 textOrigin{4.0f, 6.0f, 0.0f};
-            float averageAngle = 0.0f;
-
-            for (int i = 1; i < 5; i++)
-            {
-                LEAP_DIGIT finger = hand.digits[i];
-                Vec3 distalTip(finger.distal.next_joint);
-                Vec3 distalBase(finger.distal.prev_joint);
-                auto dir = Vec3::Subtract(distalTip, distalBase);
-                Vec3 fingerBendPlaneNormal =
-                    Vec3::CrossProduct(state.handDirection, state.palmNormal);
-
-                Vec3 projectedDir = Vec3::ProjectOntoPlane(dir, fingerBendPlaneNormal);
-                float angle = Vec3::Angle(state.handDirection, projectedDir) * Input::RAD_TO_DEG;
-
-                Vec3 textPos = {textOrigin.X(), textOrigin.Y() - ((i - 1) * 0.5f), textOrigin.Z()};
-
-                char *opt = const_cast<char *>(TextFormat("angle=%.0f", angle));
-                Debug::DrawText3D(GetFontDefault(), opt, textPos.AsRaylib(), 3.0f, 1.0f, 0.0f, false, RED,
-                           90.0f, {1.0f, 0.0f, 0.0f});
-
-                Vec3 armEnd(hand.arm.next_joint);
-                Vec3 normalizedTip = Vec3::Subtract(distalTip, armEnd);
-                normalizedTip = Vec3::ScalarMultiply(normalizedTip, 0.01f);
-                DrawLine3D(normalizedTip.AsRaylib(), textPos.AsRaylib(), WHITE);
-
-                averageAngle += angle;
-            }
-            averageAngle /= 4.0f;
-            char *text = const_cast<char *>(TextFormat("     average angle=%.0f", averageAngle));
-            Vec3 textPos = {textOrigin.X(), textOrigin.Y() - 2.0f, textOrigin.Z()};
-            Debug::DrawText3D(GetFontDefault(), text, textPos.AsRaylib(), 3.0f, 1.0f, 0.0f, false, RED,
-                       90.0f, {1.0f, 0.0f, 0.0f});
-
-            Vec3 palmPos = Vec3(hand.palm.position).AsRaylib();
-            Vec3 armEnd(hand.arm.next_joint);
-            palmPos = Vec3::Subtract(palmPos, armEnd);
-            palmPos = Vec3::ScalarMultiply(palmPos, 0.01f);
-            Vector3 centerPos = palmPos.AsRaylib();
-            DrawLine3D(Debug::VECTOR_ORIGIN, centerPos, BLACK);
-
-            float size = 3.0f;
-            float opacity = 0.35f;
-
-            Color color = GREEN;
-            color.a = static_cast<unsigned char>(opacity * 255);
-
-            Vector3 pn = Vector3Scale(Vector3Normalize(state.palmNormal.AsRaylib()), size);
-            Vector3 pd = Vector3Scale(Vector3Normalize(Vec3(hand.palm.direction).AsRaylib()), size);
-            Vector3 cr = Vector3Scale(Vector3Normalize(Vector3CrossProduct(pn, pd)), size);
-            Vector3 crInverse = Vector3Scale(cr, -1.0f);
-
-            Debug::DrawPlane(centerPos, pd, cr, size, color);
-            Debug::DrawPlane(centerPos, pd, crInverse, size, color);
-
-            DrawLine3D(Debug::VECTOR_ORIGIN, state.palmNormal.AsRaylib(), BLUE);
 
             Input::ProcessedHandState processed = Input::ProcessHandState(state);
 
