@@ -1,6 +1,7 @@
 #include <array>
 #include <cmath>
 #include <iostream>
+#include <optional>
 #include <sstream>
 #include <string>
 
@@ -69,6 +70,8 @@ int main()
         bool wasLeftFacingThisFrame = false;
         bool wasRightFacingThisFrame = false;
 
+        std::optional<Input::ProcessedHandState> currentState = std::nullopt;
+
         for (int i = 0; i < leapFrame->nHands; i++)
         {
             LEAP_HAND hand = leapFrame->pHands[i];
@@ -93,6 +96,7 @@ int main()
             }
 
             Input::ProcessedHandState processed = Input::ProcessHandState(state);
+            currentState = processed;
 
             ss << (state.isLeft ? "Left" : "Right") << " Hand:\n"
                << "    Cursor direction: (" << processed.cursorDirectionX << ", "
@@ -123,6 +127,33 @@ int main()
         //                 Input::TOLERANCE_CONE_ANGLE_RADIANS, 2.0f,
         //                 wasLeftFacingThisFrame ? GREEN : BLACK);
         EndMode3D();
+
+        Camera2D camera2d{};
+        camera2d.zoom = 1.0f;
+
+        BeginMode2D(camera2d);
+        constexpr int rectCenterX = 50;
+        constexpr int rectCenterY = 50;
+
+        constexpr int rectWidth = 100;
+        constexpr int rectHeight = 100;
+        constexpr int vectorLength = 50;
+
+        DrawRectangle(rectCenterX - (rectWidth / 2), rectCenterY - (rectHeight / 2),
+                      rectCenterX + (rectWidth / 2), rectCenterY + (rectHeight / 2), DARKGRAY);
+
+        if (currentState)
+        {
+            const int vectorX = static_cast<int>(currentState->cursorDirectionX * vectorLength);
+            const int vectorY =
+                static_cast<int>(-1.0f * currentState->cursorDirectionY *
+                                 vectorLength);  // -1 because Y is down in screen space
+
+            DrawLine(rectCenterX, rectCenterY, rectCenterX + vectorX, rectCenterY + vectorY,
+                     YELLOW);
+        }
+
+        EndMode2D();
 
         std::string output = ss.str();
         DrawText(output.c_str(), 10, 10, 10, BLACK);
