@@ -46,15 +46,13 @@ int main()
 
     SetTargetFPS(60);
 
-    int frameCounter = 0;
-    std::string frameString = "";
+    bool isClickDisengaged = true;
 
     while (!WindowShouldClose())
     {
         Debug::UpdateCamera(camera);
 
         LEAP_TRACKING_EVENT *leapFrame = connection.GetFrame();
-        if (frameCounter == 0) frameString = Debug::StringifyFrame(*leapFrame);
 
         if (IsKeyDown(KEY_E)) Input::Mouse::MoveRelative(10, 0);
         if (IsKeyDown(KEY_Q)) Input::Mouse::MoveRelative(-10, 0);
@@ -132,12 +130,12 @@ int main()
         camera2d.zoom = 1.0f;
 
         BeginMode2D(camera2d);
-        constexpr int rectCenterX = 50;
-        constexpr int rectCenterY = 50;
+        constexpr int rectCenterX = 100;
+        constexpr int rectCenterY = Debug::SCREEN_HEIGHT - 100;
 
-        constexpr int rectWidth = 100;
-        constexpr int rectHeight = 100;
-        constexpr int vectorLength = 50;
+        constexpr int rectWidth = 200;
+        constexpr int rectHeight = 200;
+        constexpr int vectorLength = 100;
 
         DrawRectangle(rectCenterX - (rectWidth / 2), rectCenterY - (rectHeight / 2),
                       rectCenterX + (rectWidth / 2), rectCenterY + (rectHeight / 2), DARKGRAY);
@@ -159,7 +157,28 @@ int main()
         DrawText(output.c_str(), 10, 10, 10, BLACK);
         EndDrawing();
 
-        frameCounter = (frameCounter + 1) % 20;
+        // do the input finally
+        if (currentState)
+        {
+            // click pose and movement pose are mutually exclusive
+            // poses in neither state are encoded as a relative mouse movement of (0, 0)
+            if (isClickDisengaged && currentState->isInClickPose)
+            {
+                std::cout << "got click" << std::endl;
+                Input::Mouse::LeftClick();
+                // click is engaged
+                // meaning: we only want to click once, not every frame
+                // non-click poses will disengage the click, letting us click again
+                isClickDisengaged = false;
+            }
+            else if (!currentState->isInClickPose)
+            {
+                constexpr float speed = 2.0f;
+                Input::Mouse::MoveRelative(currentState->cursorDirectionX * speed,
+                                           -1.0f * currentState->cursorDirectionY * speed);
+                isClickDisengaged = true;
+            }
+        }
     }
 
     CloseWindow();
