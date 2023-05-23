@@ -16,6 +16,8 @@
 namespace Helpers
 {
 
+/// @brief If _DEBUG is defined, Helpers::DebugPrint will log to stdout.
+///        Otherwise, Helpers::DebugPrint is a noop.
 constexpr bool ENABLE_DEBUG_PRINT =
 #ifdef _DEBUG
     true;
@@ -23,23 +25,36 @@ constexpr bool ENABLE_DEBUG_PRINT =
     false;
 #endif
 
+/// @brief Used for logging messages recieved by the Leap Motion runtime to stdout.
 void DebugPrint(const std::string &message);
 
+/// @brief Converts a eLeapRS enum to a human-readable string.
 std::string GetEnumString(eLeapRS res);
 
+/// @brief Singleton that encapsulates a connection to a Leap Motion device.
 class LeapConnection
 {
    public:
+    /// @brief RAII initializer for a Leap Motion connection.
     LeapConnection();
+
+    /// @brief RAII cleanup for a Leap Motion connection.
     virtual ~LeapConnection();
 
+    /// @brief Is the connection to the device valid?
     bool IsConnected() const;
+
+    /// @brief Returns the current frame obtained by the Leap Motion device.
     LEAP_TRACKING_EVENT *GetFrame() const;
+
+    /// @brief Returns a struct containing information about the Leap Motion device.
     LEAP_DEVICE_INFO *GetDeviceProperties() const;
 
    private:
+    // Singleton enforcement
     static LeapConnection *m_instance;
 
+    // State variables
     static bool m_isConnected;
     static volatile bool m_isRunning;
     static LEAP_CONNECTION m_connection;
@@ -48,11 +63,15 @@ class LeapConnection
     static HANDLE m_pollingThread;
     static CRITICAL_SECTION m_dataLock;
 
+    // Setters for m_lastDevice and m_lastFrame, respectively.
     static void SetDevice(const LEAP_DEVICE_INFO *deviceProps);
     static void SetFrame(const LEAP_TRACKING_EVENT *frame);
 
+    // The actual message loop that the Leap Motion device "posts to."
     static void MessageLoop(void *unused);
 
+    // Callbacks for each of the Leap Motion events.
+    // Most of these are not important for my purposes, and are therefore empty.
     static void OnConnected(const LEAP_CONNECTION_EVENT *connection_event);
     static void OnConnectionLost(const LEAP_CONNECTION_LOST_EVENT *connection_lost_event);
     static void OnDeviceFound(const LEAP_DEVICE_EVENT *device_event);
