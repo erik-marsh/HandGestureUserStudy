@@ -1,8 +1,5 @@
 #include "LeapMotionGestureProvider.hpp"
 
-#pragma message("NOTE: Using MSVC-specific headers in this translation unit")
-#include <corecrt_math_defines.h>
-
 #include <cmath>
 #include <iostream>
 
@@ -26,17 +23,15 @@ bool IsVectorInCone(Vec3 coneAxis, float coneAngle, Vec3 vector)
     float coneBaseRadius = coneHeight * std::tan(coneAngle);
 
     // Find the projection of the input vector against the cone's axis
-    float targetDist = Vec3::DotProduct(vector, coneAxis);  // vector.dot(coneAxis);
+    float targetDist = Vec3::DotProduct(vector, coneAxis);
 
     // Find the radius of the cone at the target distance
     float targetConeRadius = (coneBaseRadius * targetDist) / coneHeight;
     float targetConeRadiusSquared = targetConeRadius * targetConeRadius;
 
     // Find the orthogonal component of the input vector to the targetDist vector
-    // LEAP_VECTOR orthVector = vector - (targetDist * coneAxis);
     Vec3 orthVector = Vec3::Subtract(vector, Vec3::ScalarMultiply(coneAxis, targetDist));
-    // float orthMagnitudeSquared = orthVector.magnitudeSquared();  // squared for efficiency
-    float orthMagnitudeSquared = orthVector.MagnitudeSquared();
+    float orthMagnitudeSquared = orthVector.MagnitudeSquared();  // squared for efficiency
 
     // Check if the orthoganal component falls within the target radius
     return orthMagnitudeSquared < targetConeRadiusSquared;
@@ -80,15 +75,15 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
         // there might be a bit of imprecision, but this works pretty well.
         float angle = Vec3::Angle(inState.handDirection, projectedDir);
         float signingAngle = Vec3::Angle(inState.palmNormal, projectedDir);
-        if (signingAngle > M_PI / 2.0f) angle *= -1.0f;
+        if (signingAngle > Helpers::Math::_PI / 2.0f) angle *= -1.0f;
 
         if (angle < 0.0f)
         {
             // clamp to 0 or 180, whichever is closer
-            if (angle > (M_PI / 2.0f) * -1.0f)
+            if (angle > (Helpers::Math::_PI / 2.0f) * -1.0f)
                 angle = 0.0f;
             else
-                angle = M_PI;
+                angle = Helpers::Math::_PI;
         }
 
         averageAngle += angle;
@@ -98,9 +93,10 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     averageAngle /= inState.fingerDirections.size();
 
     // calculate cursor direction
-    constexpr int numCursorDirections = 8;                         // a.k.a. N
-    constexpr int numSectors = 2 * numCursorDirections;            // a.k.a. 2N
-    constexpr float sectorArcLength = M_PI / numCursorDirections;  // a.k.a. phi = 2pi / 2N
+    constexpr int numCursorDirections = 8;               // a.k.a. N
+    constexpr int numSectors = 2 * numCursorDirections;  // a.k.a. 2N
+    constexpr float sectorArcLength =
+        Helpers::Math::_PI / numCursorDirections;        // a.k.a. phi = 2pi / 2N
 
     // find the index of the sector that averageAngle is currently in,
     // which is the integer part of averageAngle / sectorArcLength
