@@ -24,21 +24,34 @@ constexpr float TOLERANCE_CONE_ANGLE_RADIANS = TOLERANCE_CONE_ANGLE_DEGREES * DE
 
 struct UnprocessedHandState
 {
-    bool isTracking;  // is the hand currently being tracked?
+    /// @brief Is the hand being tracked?
+    bool isTracking;
+
+    /// @brief Is this hand the left hand?
     bool isLeft;
 
-    // used to determine which gestures we need to recognize
+    /// @brief The palm normal of the hand.
     Helpers::Vector3Common palmNormal;
-
-    // used to determine the direction to move the mouse
+    
+    /// @brief Direction vectors of the index, middle, ring, and pinky fingertips.
     std::array<Helpers::Vector3Common, 4> fingerDirections;
+
+    /// @brief Direction vector of the hand (wrist to knuckles).
     Helpers::Vector3Common handDirection;
 };
 
+/// Click state and movement state are mutually exclusive.
+/// If isInClickPose == true, cursorDirectionX and cursorDirectionY are invalid.
+/// Otherwise, they are valid.
 struct ProcessedHandState
 {
+    /// @brief Did we register a click?
     bool isInClickPose;
+
+    /// @brief X component of the direction to move the cursor.
     float cursorDirectionX;
+
+    /// @brief  Y component of the direction to move the cursor.
     float cursorDirectionY;
 };
 
@@ -46,8 +59,13 @@ struct ProcessedHandState
 // Data processing
 ///////////////////////////////////////////////////////////////////////////////
 
+/// @brief Detects if a vector is in a cone.
+/// @param coneAxis The axis of the cone (base to tip).
+/// @param coneAngle The angle between the cone's axis and its outer surface.
+/// @param vector The vector to test.
 bool IsVectorInCone(Helpers::Vector3Common coneAxis, float coneAngle,
                     Helpers::Vector3Common vector);
+ 
 ProcessedHandState ProcessHandState(UnprocessedHandState& inState);
 
 }  // namespace Input

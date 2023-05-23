@@ -4,7 +4,6 @@
 #include <corecrt_math_defines.h>
 
 #include <cmath>
-
 #include <iostream>
 
 using Vec3 = Helpers::Vector3Common;
@@ -63,7 +62,6 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     if (!IsVectorInCone(referenceVec, TOLERANCE_CONE_ANGLE_RADIANS, palmNormal)) return outState;
 
     // calculate finger angles
-    // inState.handDirection.cross(inState.palmNormal);
     Vec3 fingerBendPlaneNormal = Vec3::CrossProduct(inState.handDirection, inState.palmNormal);
 
     float averageAngle = 0.0f;
@@ -82,8 +80,7 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
         // there might be a bit of imprecision, but this works pretty well.
         float angle = Vec3::Angle(inState.handDirection, projectedDir);
         float signingAngle = Vec3::Angle(inState.palmNormal, projectedDir);
-        if (signingAngle > M_PI / 2.0f)
-            angle *= -1.0f;
+        if (signingAngle > M_PI / 2.0f) angle *= -1.0f;
 
         if (angle < 0.0f)
         {
@@ -101,17 +98,23 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     averageAngle /= inState.fingerDirections.size();
 
     // calculate cursor direction
-    int numCursorDirections = 8;
-    float sectorArcLength = (2 * M_PI) / numCursorDirections;
+    constexpr int numCursorDirections = 8;                         // a.k.a. N
+    constexpr int numSectors = 2 * numCursorDirections;            // a.k.a. 2N
+    constexpr float sectorArcLength = M_PI / numCursorDirections;  // a.k.a. phi = 2pi / 2N
 
-    int sectorIndex = 0;
-    // yeah i have no fucking clue what this is supposed to do but it's important
-    while (averageAngle > (((2 * sectorIndex) - 1) * sectorArcLength) / 2) sectorIndex++;
-    // correction
-    sectorIndex--;
+    // find the index of the sector that averageAngle is currently in,
+    // which is the integer part of averageAngle / sectorArcLength
+    int sectorIndex = static_cast<int>(averageAngle / sectorArcLength);
 
-    outState.cursorDirectionX = std::sin(sectorIndex * sectorArcLength) * referenceVec.X();
-    outState.cursorDirectionY = std::cos(sectorIndex * sectorArcLength);
+    // {-1, 0} => 0phi
+    // {1, 2} => 2phi
+    // {3, 4} => 4phi
+    // etc...
+    // integer division means these factors do NOT cancel out
+    int scaleFactor = ((sectorIndex + 1) / 2) * 2;
+
+    outState.cursorDirectionX = std::sin(scaleFactor * sectorArcLength) * referenceVec.X();
+    outState.cursorDirectionY = std::cos(scaleFactor * sectorArcLength);
 
     return outState;
 }
