@@ -112,6 +112,9 @@ ProcessedHandState ProcessHandState(UnprocessedHandState& inState)
     outState.cursorDirectionX = std::sin(scaleFactor * sectorArcLength) * referenceVec.X();
     outState.cursorDirectionY = std::cos(scaleFactor * sectorArcLength);
 
+    outState.averageFingerDirectionX = std::sin(averageAngle) * referenceVec.X();
+    outState.averageFingerDirectionY = std::cos(averageAngle);
+
     return outState;
 }
 

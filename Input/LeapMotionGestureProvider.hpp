@@ -52,6 +52,12 @@ struct ProcessedHandState
 
     /// @brief  Y component of the direction to move the cursor.
     float cursorDirectionY;
+
+    /// @brief Used for debug visualizations.
+    float averageFingerDirectionX;
+
+    /// @brief Used for debug visualizations.
+    float averageFingerDirectionY;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

@@ -134,8 +134,15 @@ int main()
                 static_cast<int>(-1.0f * currentState->cursorDirectionY *
                                  vectorLength);  // -1 because Y is down in screen space
 
+            const int debugVectorX =
+                static_cast<int>(currentState->averageFingerDirectionX * vectorLength * 0.5f);
+            const int debugVectorY = static_cast<int>(
+                -1.0f * currentState->averageFingerDirectionY * vectorLength * 0.5f);
+
             DrawLine(rectCenterX, rectCenterY, rectCenterX + vectorX, rectCenterY + vectorY,
                      YELLOW);
+            DrawLine(rectCenterX, rectCenterY, rectCenterX + debugVectorX,
+                     rectCenterY + debugVectorY, PURPLE);
         }
 
         EndMode2D();
