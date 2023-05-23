@@ -14,13 +14,6 @@
 #undef Rectangle
 #include "raylib/src/rcamera.h"
 
-// Undefine numerical constants with similar names to constants in the LeapSDK.
-// PI in particular has a breaking name collision with Leap::PI.
-// (Doesn't math.h define M_PI with sufficient precision anyway?)
-#undef PI
-#undef DEG2RAD
-#undef RAD2DEG
-
 #include "Debug/LeapDebug.hpp"
 #include "Debug/RaylibDebug.hpp"
 #include "Helpers/LeapConnection.hpp"
@@ -53,10 +46,6 @@ int main()
         Debug::UpdateCamera(camera);
 
         LEAP_TRACKING_EVENT *leapFrame = connection.GetFrame();
-
-        if (IsKeyDown(KEY_E)) Input::Mouse::MoveRelative(10, 0);
-        if (IsKeyDown(KEY_Q)) Input::Mouse::MoveRelative(-10, 0);
-        if (IsKeyDown(KEY_F)) Input::Mouse::LeftClick();
 
         BeginDrawing();
         std::stringstream ss;

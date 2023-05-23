@@ -2,9 +2,6 @@
 
 #include "../LeapSDK/include/LeapC.h"
 #include "../raylib/src/raymath.h"
-#undef PI
-#undef DEG2RAD
-#undef RAD2DEG
 
 #include <ostream>
 
