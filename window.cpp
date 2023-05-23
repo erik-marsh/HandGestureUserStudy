@@ -7,12 +7,10 @@
 
 #include "LeapSDK/include/LeapC.h"
 
-#define Font __RAYLIB_FONT_T
-#define Rectangle __RAYLIB_RECTANGLE_T
+#define please_dont_move_this_clang_format_thanks
 #include "raylib/src/raylib.h"
-#undef Font
-#undef Rectangle
 #include "raylib/src/rcamera.h"
+#undef please_dont_move_this_clang_format_thanks
 
 #include "Debug/LeapDebug.hpp"
 #include "Debug/RaylibDebug.hpp"

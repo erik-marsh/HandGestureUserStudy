@@ -10,6 +10,9 @@ using Vec3 = Helpers::Vector3Common;
 namespace Debug
 {
 
+void DrawTextCodepoint3D(Font font, int codepoint, Vector3 position, float fontSize, bool backface,
+                         Color tint, float rotationAngle, Vector3 rotationAxis);
+
 void DrawCartesianBasis()
 {
     DrawLine3D(VECTOR_ORIGIN, VECTOR_BASIS_I, VECTOR_BASIS_I_COLOR);
@@ -28,8 +31,8 @@ void DrawVectorDecomposition(Vector3 vec, bool shouldSumVectors)
     else
     {
         DrawLine3D(VECTOR_ORIGIN, Vector3{vec.x, 0.0f, 0.0f}, VECTOR_BASIS_I_COLOR);
-        DrawLine3D(VECTOR_ORIGIN, Vector3{0.0f, 0.0f, vec.z}, VECTOR_BASIS_K_COLOR);
         DrawLine3D(VECTOR_ORIGIN, Vector3{0.0f, vec.y, 0.0f}, VECTOR_BASIS_J_COLOR);
+        DrawLine3D(VECTOR_ORIGIN, Vector3{0.0f, 0.0f, vec.z}, VECTOR_BASIS_K_COLOR);
     }
 }
 
@@ -80,8 +83,8 @@ void UpdateCamera(Camera &camera)
     }
 }
 
-void DrawCone(const Vector3 coneAxis, const Vector3 circleRotationAxis, const float coneAngle,
-              const float coneHeight, const Color coneColor)
+void DrawCone(Vector3 coneAxis, Vector3 circleRotationAxis, float coneAngle, float coneHeight,
+              Color coneColor)
 {
     const float coneBaseRadius = coneHeight * std::tan(coneAngle);
 
@@ -138,12 +141,12 @@ void DrawHand(LEAP_HAND &hand)
     Vec3 palmPos = Vec3(hand.palm.position);
     palmPos = ProjectLeapIntoRaylibSpace(palmPos, armEnd, scaleFactor);
 
-    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), cr.AsRaylib(), size, color);
-    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), crInverse.AsRaylib(), size, color);
+    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), cr.AsRaylib(), color);
+    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), crInverse.AsRaylib(), color);
 
     // Draw text to show each individual finger angle as well as the average
     const Vec3 textOrigin{4.0f, 6.0f, 0.0f};
-    __RAYLIB_FONT_T font = GetFontDefault();
+    Font font = GetFontDefault();
     float averageAngle = 0.0f;
     constexpr float fontSize = 3.0f;
     constexpr float fontSpacing = 1.0f;
@@ -181,29 +184,25 @@ void DrawHand(LEAP_HAND &hand)
                       RED, textRotationAngle, textRotationAxis);
 }
 
-void DrawPlane(Vector3 centerPos, Vector3 pd, Vector3 cr, float size, Color color)
+void DrawPlane(Vector3 centerPos, Vector3 vec1, Vector3 vec2, Color color)
 {
-    Vector3 offset{(pd.x + cr.x) / -2.0f, (pd.y + cr.y) / -2.0f, (pd.z + cr.z) / -2.0f};
+    Vector3 offset{(vec1.x + vec2.x) / -2.0f, (vec1.y + vec2.y) / -2.0f, (vec1.z + vec2.z) / -2.0f};
     rlPushMatrix();
     rlTranslatef(centerPos.x + offset.x, centerPos.y + offset.y, centerPos.z + offset.z);
 
     rlBegin(RL_QUADS);
     rlColor4ub(color.r, color.g, color.b, color.a);
     rlVertex3f(0.0f, 0.0f, 0.0f);
-    rlVertex3f(pd.x, pd.y, pd.z);
-    rlVertex3f((pd.x + cr.x), (pd.y + cr.y), (pd.z + cr.z));
-    rlVertex3f(cr.x, cr.y, cr.z);
+    rlVertex3f(vec1.x, vec1.y, vec1.z);
+    rlVertex3f((vec1.x + vec2.x), (vec1.y + vec2.y), (vec1.z + vec2.z));
+    rlVertex3f(vec2.x, vec2.y, vec2.z);
     rlEnd();
     rlPopMatrix();
 }
 
-// This helper should not be accessible outside the translation unit it is defined in.
-namespace
-{
-
 // Draw codepoint at specified position in 3D space
-void DrawTextCodepoint3D(__RAYLIB_FONT_T font, int codepoint, Vector3 position, float fontSize,
-                         bool backface, Color tint, float rotationAngle, Vector3 rotationAxis)
+void DrawTextCodepoint3D(Font font, int codepoint, Vector3 position, float fontSize, bool backface,
+                         Color tint, float rotationAngle, Vector3 rotationAxis)
 {
     // Character index position in sprite font
     // NOTE: In case a codepoint is not available in the font, index returned points to '?'
@@ -283,12 +282,10 @@ void DrawTextCodepoint3D(__RAYLIB_FONT_T font, int codepoint, Vector3 position, 
     }
 }
 
-}  // namespace
-
 // Draw a 2D text in 3D space
-void DrawText3D(__RAYLIB_FONT_T font, const char *text, Vector3 position, float fontSize,
-                float fontSpacing, float lineSpacing, bool backface, Color tint,
-                float rotationAngle, Vector3 rotationAxis)
+void DrawText3D(Font font, const char *text, Vector3 position, float fontSize, float fontSpacing,
+                float lineSpacing, bool backface, Color tint, float rotationAngle,
+                Vector3 rotationAxis)
 {
     const int length =
         TextLength(text);      // Total length in bytes of the text, scanned by codepoints in loop
