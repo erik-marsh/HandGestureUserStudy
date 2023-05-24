@@ -1,9 +1,8 @@
+#include <Input/SimulatedMouse.hpp>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
-
-#include "../Input/SimulatedMouse.hpp"
 
 const std::string USAGE_MESSAGE =
     "./virtualMouse <absolute | relative> <vert> <horiz> <click? true | false>";

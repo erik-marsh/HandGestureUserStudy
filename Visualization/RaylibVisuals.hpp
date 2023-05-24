@@ -9,7 +9,7 @@
 #include <rcamera.h>
 #include <rlgl.h>
 
-#include "../Math/Vector3Common.hpp"
+#include <Math/Vector3Common.hpp>
 
 namespace Visualization
 {
@@ -94,4 +94,4 @@ void DrawText3D(Font font, const char* text, Vector3 position, float fontSize, f
 Math::Vector3Common ProjectLeapIntoRaylibSpace(Math::Vector3Common vec,
                                                Math::Vector3Common newOrigin, float scaleFactor);
 
-}  // namespace Debug
+}  // namespace Visualization

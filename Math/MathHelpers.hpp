@@ -7,7 +7,7 @@
 #include <cmath>
 #endif
 
-#include "../Math/Vector3Common.hpp"
+#include <Math/Vector3Common.hpp>
 
 namespace Math
 {

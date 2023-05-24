@@ -2,10 +2,9 @@
 
 #include <LeapC.h>
 
+#include <Math/MathHelpers.hpp>
+#include <Math/Vector3Common.hpp>
 #include <array>
-
-#include "../Math/MathHelpers.hpp"
-#include "../Math/Vector3Common.hpp"
 
 namespace Input::Leap
 {
@@ -66,4 +65,4 @@ struct ProcessedHandState
 
 ProcessedHandState ProcessHandState(UnprocessedHandState& inState);
 
-}  // namespace Input
+}  // namespace Input::Leap

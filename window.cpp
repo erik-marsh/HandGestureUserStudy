@@ -1,3 +1,5 @@
+#include <LeapC.h>
+
 #include <array>
 #include <cmath>
 #include <iostream>
@@ -5,18 +7,16 @@
 #include <sstream>
 #include <string>
 
-#include "LeapSDK/include/LeapC.h"
-
 #define please_dont_move_this_clang_format_thanks
-#include "raylib/src/raylib.h"
-#include "raylib/src/rcamera.h"
+#include <raylib.h>
+#include <rcamera.h>
 #undef please_dont_move_this_clang_format_thanks
 
-#include "Visualization/RaylibVisuals.hpp"
-#include "Input/LeapConnection.hpp"
-#include "Input/LeapMotionGestureProvider.hpp"
-#include "Input/SimulatedMouse.hpp"
-#include "Math/Vector3Common.hpp"
+#include <Input/LeapConnection.hpp>
+#include <Input/LeapMotionGestureProvider.hpp>
+#include <Input/SimulatedMouse.hpp>
+#include <Math/Vector3Common.hpp>
+#include <Visualization/RaylibVisuals.hpp>
 
 using Vec3 = Math::Vector3Common;
 
@@ -25,7 +25,8 @@ int main()
     Input::Leap::LeapConnection connection;
     while (!connection.IsConnected()) Sleep(100);
 
-    InitWindow(Visualization::SCREEN_WIDTH, Visualization::SCREEN_HEIGHT, "something something idk");
+    InitWindow(Visualization::SCREEN_WIDTH, Visualization::SCREEN_HEIGHT,
+               "something something idk");
 
     Camera3D camera{};
     camera.position = Vector3{10.0f, 10.0f, 10.0f};
