@@ -57,7 +57,7 @@ add_executable(
     Math/MathHelpers.cpp
     Math/Vector3Common.cpp
     Visualization/RaylibVisuals.cpp
-    window.cpp)
+    Programs/GestureDriver.cpp)
 
 copy_file_to_output_directory(${MAIN_EXECUTABLE_NAME}
                               ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
@@ -80,7 +80,7 @@ target_compile_definitions(${MAIN_EXECUTABLE_NAME}
 # ========== Virtual mouse input test configuration ==========
 # ============================================================
 
-add_executable(${TEST_VIRTUAL_MOUSE} Input/SimulatedMouse.cpp Tests/VirtualMouseTest.cpp)
+add_executable(${TEST_VIRTUAL_MOUSE} Input/SimulatedMouse.cpp Programs/VirtualMouseTest.cpp)
 
 copy_file_to_output_directory(${TEST_VIRTUAL_MOUSE}
                               ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
@@ -95,7 +95,7 @@ target_link_libraries(${TEST_VIRTUAL_MOUSE} PRIVATE LeapSDK::LeapC)
 # ============== HTTP server test configuration ==============
 # ============================================================
 
-add_executable(${TEST_HTTP_SERVER} Tests/CppHttplibTest.cpp)
+add_executable(${TEST_HTTP_SERVER} Programs/CppHttplibTest.cpp)
 
 target_include_directories(${TEST_HTTP_SERVER} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB}
                                                        ${INCLUDE_RAPIDJSON})
