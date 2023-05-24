@@ -5,7 +5,7 @@
 
 using Vec3 = Math::Vector3Common;
 
-namespace Input
+namespace Input::Leap
 {
 
 ProcessedHandState ProcessHandState(UnprocessedHandState& inState)

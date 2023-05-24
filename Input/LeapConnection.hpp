@@ -13,7 +13,7 @@
 #undef DrawText  // name conflict with raylib
 #include <process.h>
 
-namespace Helpers
+namespace Input::Leap
 {
 
 /// @brief If _DEBUG is defined, Helpers::DebugPrint will log to stdout.
@@ -91,4 +91,4 @@ class LeapConnection
     static void OnTrackingMode(const LEAP_TRACKING_MODE_EVENT *mode_event);
 };
 
-}  // namespace Helpers
+}  // namespace Input::Leap

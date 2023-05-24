@@ -7,7 +7,7 @@
 #include "../Math/MathHelpers.hpp"
 #include "../Math/Vector3Common.hpp"
 
-namespace Input
+namespace Input::Leap
 {
 
 ///////////////////////////////////////////////////////////////////////////////

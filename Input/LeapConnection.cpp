@@ -3,7 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace Helpers
+namespace Input::Leap
 {
 void DebugPrint(const std::string& message)
 {
@@ -345,4 +345,4 @@ void LeapConnection::OnTrackingMode(const LEAP_TRACKING_MODE_EVENT* mode_event)
     DebugPrint("[Leap Motion] Got tracking mode.");
 }
 
-}  // namespace Helpers
+}  // namespace Input::Leap

@@ -12,9 +12,8 @@
 #include "raylib/src/rcamera.h"
 #undef please_dont_move_this_clang_format_thanks
 
-#include "Debug/LeapDebug.hpp"
 #include "Debug/RaylibDebug.hpp"
-#include "Helpers/LeapConnection.hpp"
+#include "Input/LeapConnection.hpp"
 #include "Input/LeapMotionGestureProvider.hpp"
 #include "Input/SimulatedMouse.hpp"
 #include "Math/Vector3Common.hpp"
@@ -23,7 +22,7 @@ using Vec3 = Math::Vector3Common;
 
 int main()
 {
-    Helpers::LeapConnection connection;
+    Input::Leap::LeapConnection connection;
     while (!connection.IsConnected()) Sleep(100);
 
     InitWindow(Debug::SCREEN_WIDTH, Debug::SCREEN_HEIGHT, "something something idk");
@@ -55,7 +54,7 @@ int main()
         bool wasLeftFacingThisFrame = false;
         bool wasRightFacingThisFrame = false;
 
-        std::optional<Input::ProcessedHandState> currentState = std::nullopt;
+        std::optional<Input::Leap::ProcessedHandState> currentState = std::nullopt;
 
         for (int i = 0; i < leapFrame->nHands; i++)
         {
@@ -63,7 +62,7 @@ int main()
             Debug::DrawHand(hand);
 
             // load raw state
-            Input::UnprocessedHandState state{};
+            Input::Leap::UnprocessedHandState state{};
 
             state.isTracking = true;
             state.isLeft = hand.type == eLeapHandType_Left;
@@ -80,7 +79,7 @@ int main()
                 state.fingerDirections[i - 1] = Vec3::Subtract(distalTip, distalBase);
             }
 
-            Input::ProcessedHandState processed = Input::ProcessHandState(state);
+            Input::Leap::ProcessedHandState processed = Input::Leap::ProcessHandState(state);
             currentState = processed;
 
             ss << (state.isLeft ? "Left" : "Right") << " Hand:\n"
@@ -90,12 +89,12 @@ int main()
 
             if (processed.isInClickPose) hadClickThisFrame = true;
             if (state.palmNormal.X() > 0.0f &&
-                Math::IsVectorInCone(Vec3{1.0f, 0.0f, 0.0f}, Input::TOLERANCE_CONE_ANGLE_RADIANS,
-                                     state.palmNormal))
+                Math::IsVectorInCone(Vec3{1.0f, 0.0f, 0.0f},
+                                     Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS, state.palmNormal))
                 wasRightFacingThisFrame = true;
             if (state.palmNormal.X() < 0.0f &&
-                Math::IsVectorInCone(Vec3{-1.0f, 0.0f, 0.0f}, Input::TOLERANCE_CONE_ANGLE_RADIANS,
-                                     state.palmNormal))
+                Math::IsVectorInCone(Vec3{-1.0f, 0.0f, 0.0f},
+                                     Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS, state.palmNormal))
                 wasLeftFacingThisFrame = true;
         }
 
