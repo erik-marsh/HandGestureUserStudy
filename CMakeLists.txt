@@ -50,9 +50,8 @@ add_subdirectory(raylib)
 
 add_executable(
     ${MAIN_EXECUTABLE_NAME}
-    Debug/LeapDebug.cpp
-    Debug/RaylibDebug.cpp
-    Helpers/LeapConnection.cpp
+    Visualization/RaylibVisuals.cpp
+    Input/LeapConnection.cpp
     Input/LeapMotionGestureProvider.cpp
     Input/SimulatedMouse.cpp
     Math/MathHelpers.cpp

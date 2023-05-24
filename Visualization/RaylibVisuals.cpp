@@ -1,11 +1,11 @@
-#include "RaylibDebug.hpp"
+#include "RaylibVisuals.hpp"
 
 #include <cmath>
 #include <iostream>
 
 using Vec3 = Math::Vector3Common;
 
-namespace Debug
+namespace Visualization
 {
 
 void DrawTextCodepoint3D(Font font, int codepoint, Vector3 position, float fontSize, bool backface,
@@ -134,13 +134,13 @@ void DrawHand(LEAP_HAND &hand)
     cr = Vec3::SetMagnitude(cr, size);
     Vec3 crInverse = Vec3::ScalarMultiply(cr, -1.0f);
 
-    DrawLine3D(Debug::VECTOR_ORIGIN, palmNormal.AsRaylib(), BLUE);
+    DrawLine3D(VECTOR_ORIGIN, palmNormal.AsRaylib(), BLUE);
 
     Vec3 palmPos = Vec3(hand.palm.position);
     palmPos = ProjectLeapIntoRaylibSpace(palmPos, armEnd, scaleFactor);
 
-    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), cr.AsRaylib(), color);
-    Debug::DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), crInverse.AsRaylib(), color);
+    DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), cr.AsRaylib(), color);
+    DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), crInverse.AsRaylib(), color);
 
     // Draw text to show each individual finger angle as well as the average
     const Vec3 textOrigin{4.0f, 6.0f, 0.0f};
@@ -167,7 +167,7 @@ void DrawHand(LEAP_HAND &hand)
         Vec3 textPos = {textOrigin.X(), textOrigin.Y() - ((i - 1) * 0.5f), textOrigin.Z()};
 
         const char *opt = TextFormat("angle=%.0f", angle);
-        Debug::DrawText3D(font, opt, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
+        DrawText3D(font, opt, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
                           RED, textRotationAngle, textRotationAxis);
 
         Vec3 normalizedTip = ProjectLeapIntoRaylibSpace(distalTip, armEnd, scaleFactor);
@@ -178,7 +178,7 @@ void DrawHand(LEAP_HAND &hand)
     averageAngle /= 4.0f;
     const char *text = TextFormat("     average angle=%.0f", averageAngle);
     Vec3 textPos = {textOrigin.X(), textOrigin.Y() - 2.0f, textOrigin.Z()};
-    Debug::DrawText3D(font, text, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
+    DrawText3D(font, text, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
                       RED, textRotationAngle, textRotationAxis);
 }
 

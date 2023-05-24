@@ -12,7 +12,7 @@
 #include "raylib/src/rcamera.h"
 #undef please_dont_move_this_clang_format_thanks
 
-#include "Debug/RaylibDebug.hpp"
+#include "Visualization/RaylibVisuals.hpp"
 #include "Input/LeapConnection.hpp"
 #include "Input/LeapMotionGestureProvider.hpp"
 #include "Input/SimulatedMouse.hpp"
@@ -25,7 +25,7 @@ int main()
     Input::Leap::LeapConnection connection;
     while (!connection.IsConnected()) Sleep(100);
 
-    InitWindow(Debug::SCREEN_WIDTH, Debug::SCREEN_HEIGHT, "something something idk");
+    InitWindow(Visualization::SCREEN_WIDTH, Visualization::SCREEN_HEIGHT, "something something idk");
 
     Camera3D camera{};
     camera.position = Vector3{10.0f, 10.0f, 10.0f};
@@ -40,7 +40,7 @@ int main()
 
     while (!WindowShouldClose())
     {
-        Debug::UpdateCamera(camera);
+        Visualization::UpdateCamera(camera);
 
         LEAP_TRACKING_EVENT *leapFrame = connection.GetFrame();
 
@@ -49,7 +49,7 @@ int main()
 
         ClearBackground(LIGHTGRAY);
         BeginMode3D(camera);
-        Debug::DrawCartesianBasis();
+        Visualization::DrawCartesianBasis();
         bool hadClickThisFrame = false;
         bool wasLeftFacingThisFrame = false;
         bool wasRightFacingThisFrame = false;
@@ -59,7 +59,7 @@ int main()
         for (int i = 0; i < leapFrame->nHands; i++)
         {
             LEAP_HAND hand = leapFrame->pHands[i];
-            Debug::DrawHand(hand);
+            Visualization::DrawHand(hand);
 
             // load raw state
             Input::Leap::UnprocessedHandState state{};
@@ -117,7 +117,7 @@ int main()
 
         BeginMode2D(camera2d);
         constexpr int rectCenterX = 100;
-        constexpr int rectCenterY = Debug::SCREEN_HEIGHT - 100;
+        constexpr int rectCenterY = Visualization::SCREEN_HEIGHT - 100;
 
         constexpr int rectWidth = 200;
         constexpr int rectHeight = 200;
