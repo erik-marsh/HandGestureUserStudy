@@ -8,8 +8,6 @@
 namespace Input::Mouse
 {
 
-namespace
-{
 enum class Coordinate
 {
     X,
@@ -30,7 +28,6 @@ int ToNormalizedAbsoluteCoordinates(int pixels)
     float scaleFactor = 65536.0f / GetSystemMetrics(metricIndex);
     return static_cast<int>(scaleFactor * pixels);
 }
-}  // namespace
 
 // Note: In practice, the dx and dy are approximate
 // If you pass in (10, 10), you won't necessarily get a differential of (10, 10),
