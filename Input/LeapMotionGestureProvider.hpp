@@ -1,10 +1,11 @@
 #pragma once
 
+#include <LeapC.h>
+
 #include <array>
 
 #include "../Helpers/MathHelpers.hpp"
 #include "../Helpers/Vector3Common.hpp"
-#include "../LeapSDK/include/LeapC.h"
 
 namespace Input
 {

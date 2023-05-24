@@ -1,8 +1,8 @@
 #pragma once
 
-#include <string>
+#include <LeapC.h>
 
-#include "../LeapSDK/include/LeapC.h"
+#include <string>
 
 #define WIN32_LEAN_AND_MEAN
 #define CloseWindow __WIN32_CLOSE_WINDOW  // name conflict with raylib

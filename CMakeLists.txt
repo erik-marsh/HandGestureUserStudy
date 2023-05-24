@@ -4,9 +4,17 @@ project(HandGestureUserStudy C CXX)
 # ========================================
 # ========== User configuration ==========
 # ========================================
+
+# targets
 set(MAIN_EXECUTABLE_NAME gestureDriver)
 set(TEST_VIRTUAL_MOUSE virtualMouse)
 set(TEST_HTTP_SERVER httpServer)
+
+# include directories
+set(INCLUDE_CPP_HTTPLIB ${CMAKE_CURRENT_SOURCE_DIR}/cpp-httplib/)
+set(INCLUDE_RAYLIB ${CMAKE_CURRENT_SOURCE_DIR}/raylib/src/)
+set(INCLUDE_RAPIDJSON ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/)
+set(INCLUDE_LEAPSDK ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/include/)
 
 # ======================================
 # ========== Functions/macros ==========
@@ -55,6 +63,9 @@ copy_file_to_output_directory(${MAIN_EXECUTABLE_NAME}
 
 target_compile_features(${MAIN_EXECUTABLE_NAME} PRIVATE cxx_std_20)
 
+target_include_directories(${MAIN_EXECUTABLE_NAME} PRIVATE ${INCLUDE_RAYLIB} ${INCLUDE_CPP_HTTPLIB}
+                                                           ${INCLUDE_RAPIDJSON} ${INCLUDE_LEAPSDK})
+
 target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE raylib LeapSDK::LeapC)
 
 # ASSETS_PATH => required for raylib assets (unused)
@@ -81,5 +92,7 @@ target_link_libraries(${TEST_VIRTUAL_MOUSE} PRIVATE LeapSDK::LeapC)
 # ============================================================
 
 add_executable(${TEST_HTTP_SERVER} Tests/CppHttplibTest.cpp)
+
+target_include_directories(${TEST_HTTP_SERVER} PRIVATE ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAPIDJSON})
 
 target_compile_features(${TEST_HTTP_SERVER} PRIVATE cxx_std_20)

@@ -1,9 +1,9 @@
 #pragma once
 
+#include <LeapC.h>
+
 #include <array>
 #include <string>
-
-#include "../LeapSDK/include/LeapC.h"
 
 namespace Debug
 {

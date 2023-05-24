@@ -1,8 +1,8 @@
-#include <iostream>
+#include <httplib.h>
+#include <rapidjson/document.h>
+#include <rapidjson/rapidjson.h>
 
-#include "../cpp-httplib/httplib.h"
-#include "../rapidjson/include/rapidjson/document.h"
-#include "../rapidjson/include/rapidjson/rapidjson.h"
+#include <iostream>
 
 int main()
 {

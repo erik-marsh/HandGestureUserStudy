@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../LeapSDK/include/LeapC.h"
-#include "../raylib/src/raymath.h"
+#include <LeapC.h>
+#include <raymath.h>
 
 #include <ostream>
 

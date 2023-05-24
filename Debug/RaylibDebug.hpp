@@ -1,14 +1,15 @@
 #pragma once
 
 #define __this_needs_to_be_included_first_for_some_reason
-#include "../raylib/src/raylib.h"
+#include <raylib.h>
 #undef __this_needs_to_be_included_first_for_some_reason
 
+#include <LeapC.h>
+#include <raymath.h>
+#include <rcamera.h>
+#include <rlgl.h>
+
 #include "../Helpers/Vector3Common.hpp"
-#include "../LeapSDK/include/LeapC.h"
-#include "../raylib/src/raymath.h"
-#include "../raylib/src/rcamera.h"
-#include "../raylib/src/rlgl.h"
 
 namespace Debug
 {
