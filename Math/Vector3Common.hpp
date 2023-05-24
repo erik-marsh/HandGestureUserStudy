@@ -5,7 +5,7 @@
 
 #include <ostream>
 
-namespace Helpers
+namespace Math
 {
 
 class Vector3Common
@@ -50,4 +50,4 @@ std::ostream& operator<<(std::ostream& stream, const Vector3Common& vec);
 std::ostream& operator<<(std::ostream& stream, const Vector3& vec);
 std::ostream& operator<<(std::ostream& stream, const LEAP_VECTOR& vec);
 
-}  // namespace Helpers
+}  // namespace Math

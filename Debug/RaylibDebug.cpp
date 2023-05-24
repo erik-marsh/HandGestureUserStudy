@@ -3,7 +3,7 @@
 #include <cmath>
 #include <iostream>
 
-using Vec3 = Helpers::Vector3Common;
+using Vec3 = Math::Vector3Common;
 
 namespace Debug
 {

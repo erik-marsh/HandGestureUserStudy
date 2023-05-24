@@ -1,6 +1,6 @@
 #include "Vector3Common.hpp"
 
-namespace Helpers
+namespace Math
 {
 
 Vector3Common::Vector3Common() : m_vec(Vector3{0.0f, 0.0f, 0.0f}) {}
@@ -128,4 +128,4 @@ std::ostream& operator<<(std::ostream& stream, const LEAP_VECTOR& vec)
     return stream;
 }
 
-}  // namespace Helpers
+}  // namespace Math

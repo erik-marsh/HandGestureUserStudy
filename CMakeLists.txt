@@ -53,9 +53,10 @@ add_executable(
     Debug/LeapDebug.cpp
     Debug/RaylibDebug.cpp
     Helpers/LeapConnection.cpp
-    Helpers/Vector3Common.cpp
     Input/LeapMotionGestureProvider.cpp
     Input/SimulatedMouse.cpp
+    Math/MathHelpers.cpp
+    Math/Vector3Common.cpp
     window.cpp)
 
 copy_file_to_output_directory(${MAIN_EXECUTABLE_NAME}

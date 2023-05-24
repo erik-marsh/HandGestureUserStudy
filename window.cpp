@@ -15,11 +15,11 @@
 #include "Debug/LeapDebug.hpp"
 #include "Debug/RaylibDebug.hpp"
 #include "Helpers/LeapConnection.hpp"
-#include "Helpers/Vector3Common.hpp"
 #include "Input/LeapMotionGestureProvider.hpp"
 #include "Input/SimulatedMouse.hpp"
+#include "Math/Vector3Common.hpp"
 
-using Vec3 = Helpers::Vector3Common;
+using Vec3 = Math::Vector3Common;
 
 int main()
 {
@@ -90,12 +90,12 @@ int main()
 
             if (processed.isInClickPose) hadClickThisFrame = true;
             if (state.palmNormal.X() > 0.0f &&
-                Input::IsVectorInCone(Vec3{1.0f, 0.0f, 0.0f}, Input::TOLERANCE_CONE_ANGLE_RADIANS,
-                                      state.palmNormal))
+                Math::IsVectorInCone(Vec3{1.0f, 0.0f, 0.0f}, Input::TOLERANCE_CONE_ANGLE_RADIANS,
+                                     state.palmNormal))
                 wasRightFacingThisFrame = true;
             if (state.palmNormal.X() < 0.0f &&
-                Input::IsVectorInCone(Vec3{-1.0f, 0.0f, 0.0f}, Input::TOLERANCE_CONE_ANGLE_RADIANS,
-                                      state.palmNormal))
+                Math::IsVectorInCone(Vec3{-1.0f, 0.0f, 0.0f}, Input::TOLERANCE_CONE_ANGLE_RADIANS,
+                                     state.palmNormal))
                 wasLeftFacingThisFrame = true;
         }
 

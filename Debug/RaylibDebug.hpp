@@ -9,7 +9,7 @@
 #include <rcamera.h>
 #include <rlgl.h>
 
-#include "../Helpers/Vector3Common.hpp"
+#include "../Math/Vector3Common.hpp"
 
 namespace Debug
 {
@@ -91,8 +91,7 @@ void DrawText3D(Font font, const char* text, Vector3 position, float fontSize, f
 /// @param newOrigin A vector to be considered the new origin of the space.
 /// @param scaleFactor The scale factor to scale the vector down by.
 /// @return The projected vector.
-Helpers::Vector3Common ProjectLeapIntoRaylibSpace(Helpers::Vector3Common vec,
-                                                  Helpers::Vector3Common newOrigin,
-                                                  float scaleFactor);
+Math::Vector3Common ProjectLeapIntoRaylibSpace(Math::Vector3Common vec,
+                                               Math::Vector3Common newOrigin, float scaleFactor);
 
 }  // namespace Debug
