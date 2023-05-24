@@ -6,6 +6,7 @@ project(HandGestureUserStudy C CXX)
 # ========================================
 set(MAIN_EXECUTABLE_NAME gestureDriver)
 set(TEST_VIRTUAL_MOUSE virtualMouse)
+set(TEST_HTTP_SERVER httpServer)
 
 # ======================================
 # ========== Functions/macros ==========
@@ -38,6 +39,7 @@ add_subdirectory(raylib)
 # ===================================================
 # ========== Main executable configuration ==========
 # ===================================================
+
 add_executable(
     ${MAIN_EXECUTABLE_NAME}
     Debug/LeapDebug.cpp
@@ -73,3 +75,11 @@ copy_file_to_output_directory(${TEST_VIRTUAL_MOUSE}
 target_compile_features(${TEST_VIRTUAL_MOUSE} PRIVATE cxx_std_20)
 
 target_link_libraries(${TEST_VIRTUAL_MOUSE} PRIVATE LeapSDK::LeapC)
+
+# ============================================================
+# ============== HTTP server test configuration ==============
+# ============================================================
+
+add_executable(${TEST_HTTP_SERVER} Tests/CppHttplibTest.cpp)
+
+target_compile_features(${TEST_HTTP_SERVER} PRIVATE cxx_std_20)
