@@ -9,6 +9,7 @@ project(HandGestureUserStudy C CXX)
 set(MAIN_EXECUTABLE_NAME gestureDriver)
 set(TEST_VIRTUAL_MOUSE virtualMouse)
 set(TEST_HTTP_SERVER httpServer)
+set(TEST_THREADING threadingTest)
 
 # include directories
 set(INCLUDE_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/)
@@ -56,8 +57,8 @@ add_executable(
     Input/SimulatedMouse.cpp
     Math/MathHelpers.cpp
     Math/Vector3Common.cpp
-    Visualization/RaylibVisuals.cpp
-    Programs/GestureDriver.cpp)
+    Programs/GestureDriver.cpp
+    Visualization/RaylibVisuals.cpp)
 
 copy_file_to_output_directory(${MAIN_EXECUTABLE_NAME}
                               ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
@@ -101,3 +102,27 @@ target_include_directories(${TEST_HTTP_SERVER} PRIVATE ${INCLUDE_MAIN} ${INCLUDE
                                                        ${INCLUDE_RAPIDJSON})
 
 target_compile_features(${TEST_HTTP_SERVER} PRIVATE cxx_std_20)
+
+# ============================================================
+# =============== Threading test configuration ===============
+# ============================================================
+
+add_executable(
+    ${TEST_THREADING}
+    Input/LeapConnection.cpp
+    Input/LeapMotionGestureProvider.cpp
+    Input/SimulatedMouse.cpp
+    Math/MathHelpers.cpp
+    Math/Vector3Common.cpp
+    Programs/ThreadingTest.cpp
+    Programs/Visualizer.cpp
+    Visualization/RaylibVisuals.cpp)
+
+copy_file_to_output_directory(${TEST_THREADING} ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
+
+target_include_directories(${TEST_THREADING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB}
+                                                 ${INCLUDE_RAYLIB} ${INCLUDE_LEAPSDK})
+
+target_compile_features(${TEST_THREADING} PRIVATE cxx_std_20)
+
+target_link_libraries(${TEST_THREADING} PRIVATE raylib LeapSDK::LeapC)
