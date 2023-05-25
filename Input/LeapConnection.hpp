@@ -11,6 +11,8 @@
 #undef CloseWindow
 #undef ShowCursor
 #undef DrawText  // name conflict with raylib
+#undef near      // name conflict with raylib
+#undef far       // name conflict with raylib
 #include <process.h>
 
 namespace Input::Leap
