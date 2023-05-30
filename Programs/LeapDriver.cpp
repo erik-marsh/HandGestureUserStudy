@@ -1,8 +1,8 @@
 #include "LeapDriver.hpp"
-#include <Math/Vector3Common.hpp>
 
 #include <Input/LeapMotionGestureProvider.hpp>
 #include <Input/SimulatedMouse.hpp>
+#include <Math/Vector3Common.hpp>
 #include <chrono>
 #include <optional>
 #include <sstream>
@@ -22,7 +22,7 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
     using Time = std::chrono::high_resolution_clock::time_point;
     using Nanos = std::chrono::nanoseconds;
 
-    constexpr Nanos frameTime = Nanos(16'666'666);  // 16.67ms, 60Hz
+    constexpr Nanos frameTime = Nanos(1'000'000);  // 1ms
 
     bool isClickDisengaged = true;
 
@@ -93,7 +93,6 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
             // poses in neither state are encoded as a relative mouse movement of (0, 0)
             if (isClickDisengaged && currentState->isInClickPose)
             {
-                // std::cout << "got click" << std::endl;
                 Input::Mouse::LeftClick();
                 // click is engaged
                 // meaning: we only want to click once, not every frame
@@ -103,9 +102,7 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
             else if (!currentState->isInClickPose)
             {
                 // originally this speed was 2px per every 16.67ms (60Hz)
-                // now since we have nanosecond resolution, we need to convert
                 constexpr float speed = 2.0f;
-                //const float speed = static_cast<float>(deltaTime.count()) / 8333333.0f;
                 Input::Mouse::MoveRelative(currentState->cursorDirectionX * speed,
                                            -1.0f * currentState->cursorDirectionY * speed);
                 isClickDisengaged = true;
@@ -115,8 +112,7 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
         Time frameEnd = Clock::now();
         Nanos processingTime = frameEnd - frameStart;
 
-        if (processingTime.count() > 0)
-            std::this_thread::sleep_for(frameTime - processingTime);
+        if (processingTime.count() > 0) std::this_thread::sleep_for(frameTime - processingTime);
     }
 }
 
