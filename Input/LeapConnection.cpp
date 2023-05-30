@@ -72,6 +72,14 @@ LeapConnection::LeapConnection()
         throw std::runtime_error("Unable to open connection to Leap Motion.");
 
     m_isRunning = true;
+
+    m_lastFrame = static_cast<LEAP_TRACKING_EVENT*>(malloc(sizeof(LEAP_TRACKING_EVENT)));
+    *m_lastFrame = {};
+
+    m_lastDevice = static_cast<LEAP_DEVICE_INFO*>(malloc(sizeof(LEAP_DEVICE_INFO)));
+    *m_lastDevice = {};
+
+    m_pollingThread = std::thread(&LeapConnection::MessageLoop);
 }
 
 LeapConnection::~LeapConnection()
@@ -108,15 +116,13 @@ LEAP_DEVICE_INFO* LeapConnection::GetDeviceProperties() const
 void LeapConnection::SetDevice(const LEAP_DEVICE_INFO* deviceProps)
 {
     std::lock_guard<std::mutex> guard(m_dataLock);
-    if (m_lastDevice)
+    if (m_lastDevice && m_lastDevice->serial)
     {
         free(m_lastDevice->serial);
     }
-    else
-    {
-        m_lastDevice = static_cast<LEAP_DEVICE_INFO*>(malloc(sizeof(*deviceProps)));
-    }
     *m_lastDevice = *deviceProps;
+
+    // copying a cstring
     m_lastDevice->serial = static_cast<char*>(malloc(deviceProps->serial_length));
     memcpy(m_lastDevice->serial, deviceProps->serial, deviceProps->serial_length);
 }
@@ -124,7 +130,6 @@ void LeapConnection::SetDevice(const LEAP_DEVICE_INFO* deviceProps)
 void LeapConnection::SetFrame(const LEAP_TRACKING_EVENT* frame)
 {
     std::lock_guard<std::mutex> guard(m_dataLock);
-    if (!m_lastFrame) m_lastFrame = static_cast<LEAP_TRACKING_EVENT*>(malloc(sizeof(*frame)));
     *m_lastFrame = *frame;
 }
 
@@ -134,7 +139,7 @@ void LeapConnection::MessageLoop()
     LEAP_CONNECTION_MESSAGE msg;
     while (m_isRunning)
     {
-        unsigned int timeout = 1000;
+        constexpr unsigned int timeout = 1000;
         result = LeapPollConnection(m_connection, timeout, &msg);
 
         if (result != eLeapRS_Success)
@@ -212,7 +217,7 @@ volatile bool LeapConnection::m_isRunning = false;
 LEAP_CONNECTION LeapConnection::m_connection{};
 LEAP_TRACKING_EVENT* LeapConnection::m_lastFrame = nullptr;
 LEAP_DEVICE_INFO* LeapConnection::m_lastDevice = nullptr;
-std::thread LeapConnection::m_pollingThread(&LeapConnection::MessageLoop);
+std::thread LeapConnection::m_pollingThread{};
 std::mutex LeapConnection::m_dataLock{};
 
 void LeapConnection::OnConnected(const LEAP_CONNECTION_EVENT* connection_event)
@@ -234,7 +239,6 @@ void LeapConnection::OnDeviceFound(const LEAP_DEVICE_EVENT* device_event)
     eLeapRS result = LeapOpenDevice(device_event->device, &deviceHandle);
     if (result != eLeapRS_Success)
     {
-        // printf("Could not open device %s.\n", GetEnumString(result).c_str());
         DebugPrint("[Leap Motion] ERROR (" + GetEnumString(result) + "): Could not open device.");
         return;
     }
@@ -247,7 +251,7 @@ void LeapConnection::OnDeviceFound(const LEAP_DEVICE_EVENT* device_event)
     deviceProperties.serial_length = 1;
     deviceProperties.serial = static_cast<char*>(malloc(deviceProperties.serial_length));
     // This will fail since the serial buffer is only 1 character long
-    //  But deviceProperties is updated to contain the required buffer length
+    // But deviceProperties is updated to contain the required buffer length
     result = LeapGetDeviceInfo(deviceHandle, &deviceProperties);
     if (result == eLeapRS_InsufficientBuffer)
     {
@@ -257,7 +261,6 @@ void LeapConnection::OnDeviceFound(const LEAP_DEVICE_EVENT* device_event)
         result = LeapGetDeviceInfo(deviceHandle, &deviceProperties);
         if (result != eLeapRS_Success)
         {
-            // printf("Failed to get device info %s.\n", GetEnumString(result).c_str());
             DebugPrint("[Leap Motion] ERROR (" + GetEnumString(result) +
                        "): Failed to get device info.");
             free(deviceProperties.serial);
@@ -265,10 +268,6 @@ void LeapConnection::OnDeviceFound(const LEAP_DEVICE_EVENT* device_event)
         }
     }
     SetDevice(&deviceProperties);
-    // if (ConnectionCallbacks.on_device_found)
-    // {
-    //     ConnectionCallbacks.on_device_found(&deviceProperties);
-    // }
 
     free(deviceProperties.serial);
     LeapCloseDevice(deviceHandle);
