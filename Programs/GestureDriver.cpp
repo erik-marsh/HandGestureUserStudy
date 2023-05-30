@@ -1,33 +1,26 @@
 #include <LeapC.h>
+#include <raylib.h>
+#include <rcamera.h>
 
+#include <Input/LeapConnection.hpp>
+#include <Input/LeapMotionGestureProvider.hpp>
+#include <Input/SimulatedMouse.hpp>
+#include <Math/Vector3Common.hpp>
+#include <Visualization/RaylibVisuals.hpp>
 #include <array>
 #include <cmath>
 #include <iostream>
 #include <optional>
 #include <sstream>
 #include <string>
-
-// lots of raylib stuff depends on include order for some reason
-#define please_dont_move_this_clang_format_thanks
-#include <raylib.h>
-#include <rcamera.h>
-#undef please_dont_move_this_clang_format_thanks
-
-#define please_dont_move_this_clang_format_thanks
-#include <Visualization/RaylibVisuals.hpp>
-#undef please_dont_move_this_clang_format_thanks
-
-#include <Input/LeapConnection.hpp>
-#include <Input/LeapMotionGestureProvider.hpp>
-#include <Input/SimulatedMouse.hpp>
-#include <Math/Vector3Common.hpp>
+#include <thread>
 
 using Vec3 = Math::Vector3Common;
 
 int main()
 {
     Input::Leap::LeapConnection connection;
-    while (!connection.IsConnected()) Sleep(100);
+    while (!connection.IsConnected()) std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     InitWindow(Visualization::SCREEN_WIDTH, Visualization::SCREEN_HEIGHT,
                "something something idk");

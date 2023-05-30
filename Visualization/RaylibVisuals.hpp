@@ -1,10 +1,7 @@
 #pragma once
 
-#define __this_needs_to_be_included_first_for_some_reason
-#include <raylib.h>
-#undef __this_needs_to_be_included_first_for_some_reason
-
 #include <LeapC.h>
+#include <raylib.h>
 #include <raymath.h>
 #include <rcamera.h>
 #include <rlgl.h>

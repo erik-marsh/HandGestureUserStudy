@@ -1,10 +1,8 @@
 #include "Visualizer.hpp"
 
-#define _____
 #include <raylib.h>
-#define ____
 #include <rcamera.h>
-#define ___
+
 #include <Visualization/RaylibVisuals.hpp>
 
 namespace Visualization
