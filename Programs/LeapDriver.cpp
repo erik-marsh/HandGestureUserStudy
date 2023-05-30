@@ -44,6 +44,8 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
         bool isLeft = true;
         LEAP_TRACKING_EVENT* leapFrame = connection.GetFrame();
 
+        if (!leapFrame) continue;
+
         for (int i = 0; i < leapFrame->nHands; i++)
         {
             LEAP_HAND hand = leapFrame->pHands[i];
@@ -112,7 +114,9 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
 
         Time frameEnd = Clock::now();
         Nanos processingTime = frameEnd - frameStart;
-        std::this_thread::sleep_for(frameTime - processingTime);
+
+        if (processingTime.count() > 0)
+            std::this_thread::sleep_for(frameTime - processingTime);
     }
 }
 

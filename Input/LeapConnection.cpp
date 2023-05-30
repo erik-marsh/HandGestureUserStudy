@@ -61,9 +61,9 @@ std::string GetEnumString(eLeapRS res)
 
 LeapConnection::LeapConnection()
 {
-    if (m_instance)
+    if (m_isInitialized)
         throw std::runtime_error("Unable to create new LeapConnnection when one already exists.");
-    m_instance = this;
+    m_isInitialized = true;
 
     if (LeapCreateConnection(nullptr, &m_connection) != eLeapRS_Success)
         throw std::runtime_error("Unable to create connection to Leap Motion.");
@@ -72,18 +72,15 @@ LeapConnection::LeapConnection()
         throw std::runtime_error("Unable to open connection to Leap Motion.");
 
     m_isRunning = true;
-    InitializeCriticalSection(&m_dataLock);
-    m_pollingThread = reinterpret_cast<HANDLE>(_beginthread(MessageLoop, 0, nullptr));
 }
 
 LeapConnection::~LeapConnection()
 {
     m_isRunning = false;
     LeapCloseConnection(m_connection);
-    WaitForSingleObject(m_pollingThread, INFINITE);
-    CloseHandle(m_pollingThread);
+    m_pollingThread.join();
     LeapDestroyConnection(m_connection);
-    m_instance = nullptr;
+    m_isInitialized = false;
 }
 
 bool LeapConnection::IsConnected() const { return m_isConnected; }
@@ -91,24 +88,26 @@ bool LeapConnection::IsConnected() const { return m_isConnected; }
 LEAP_TRACKING_EVENT* LeapConnection::GetFrame() const
 {
     LEAP_TRACKING_EVENT* currentFrame;
-    EnterCriticalSection(&m_dataLock);
-    currentFrame = m_lastFrame;
-    LeaveCriticalSection(&m_dataLock);
+    {
+        std::lock_guard<std::mutex> guard(m_dataLock);
+        currentFrame = m_lastFrame;
+    }
     return currentFrame;
 }
 
 LEAP_DEVICE_INFO* LeapConnection::GetDeviceProperties() const
 {
     LEAP_DEVICE_INFO* currentDevice;
-    EnterCriticalSection(&m_dataLock);
-    currentDevice = m_lastDevice;
-    LeaveCriticalSection(&m_dataLock);
+    {
+        std::lock_guard<std::mutex> guard(m_dataLock);
+        currentDevice = m_lastDevice;
+    }
     return currentDevice;
 }
 
 void LeapConnection::SetDevice(const LEAP_DEVICE_INFO* deviceProps)
 {
-    EnterCriticalSection(&m_dataLock);
+    std::lock_guard<std::mutex> guard(m_dataLock);
     if (m_lastDevice)
     {
         free(m_lastDevice->serial);
@@ -120,18 +119,16 @@ void LeapConnection::SetDevice(const LEAP_DEVICE_INFO* deviceProps)
     *m_lastDevice = *deviceProps;
     m_lastDevice->serial = static_cast<char*>(malloc(deviceProps->serial_length));
     memcpy(m_lastDevice->serial, deviceProps->serial, deviceProps->serial_length);
-    LeaveCriticalSection(&m_dataLock);
 }
 
 void LeapConnection::SetFrame(const LEAP_TRACKING_EVENT* frame)
 {
-    EnterCriticalSection(&m_dataLock);
+    std::lock_guard<std::mutex> guard(m_dataLock);
     if (!m_lastFrame) m_lastFrame = static_cast<LEAP_TRACKING_EVENT*>(malloc(sizeof(*frame)));
     *m_lastFrame = *frame;
-    LeaveCriticalSection(&m_dataLock);
 }
 
-void LeapConnection::MessageLoop(void* unused)
+void LeapConnection::MessageLoop()
 {
     eLeapRS result;
     LEAP_CONNECTION_MESSAGE msg;
@@ -209,14 +206,14 @@ void LeapConnection::MessageLoop(void* unused)
     }
 }
 
-LeapConnection* LeapConnection::m_instance = nullptr;
+bool LeapConnection::m_isInitialized = false;
 bool LeapConnection::m_isConnected = false;
 volatile bool LeapConnection::m_isRunning = false;
 LEAP_CONNECTION LeapConnection::m_connection{};
 LEAP_TRACKING_EVENT* LeapConnection::m_lastFrame = nullptr;
 LEAP_DEVICE_INFO* LeapConnection::m_lastDevice = nullptr;
-HANDLE LeapConnection::m_pollingThread{};
-CRITICAL_SECTION LeapConnection::m_dataLock{};
+std::thread LeapConnection::m_pollingThread(&LeapConnection::MessageLoop);
+std::mutex LeapConnection::m_dataLock{};
 
 void LeapConnection::OnConnected(const LEAP_CONNECTION_EVENT* connection_event)
 {

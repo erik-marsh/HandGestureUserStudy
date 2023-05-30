@@ -2,18 +2,9 @@
 
 #include <LeapC.h>
 
+#include <mutex>
 #include <string>
-
-#define WIN32_LEAN_AND_MEAN
-#define CloseWindow __WIN32_CLOSE_WINDOW  // name conflict with raylib
-#define ShowCursor __WIN32_SHOW_CURSOR    // name conflict with raylib
-#include <Windows.h>
-#undef CloseWindow
-#undef ShowCursor
-#undef DrawText  // name conflict with raylib
-#undef near      // name conflict with raylib
-#undef far       // name conflict with raylib
-#include <process.h>
+#include <thread>
 
 namespace Input::Leap
 {
@@ -54,7 +45,7 @@ class LeapConnection
 
    private:
     // Singleton enforcement
-    static LeapConnection *m_instance;
+    static bool m_isInitialized;
 
     // State variables
     static bool m_isConnected;
@@ -62,15 +53,15 @@ class LeapConnection
     static LEAP_CONNECTION m_connection;
     static LEAP_TRACKING_EVENT *m_lastFrame;
     static LEAP_DEVICE_INFO *m_lastDevice;
-    static HANDLE m_pollingThread;
-    static CRITICAL_SECTION m_dataLock;
+    static std::thread m_pollingThread;
+    static std::mutex m_dataLock;
 
     // Setters for m_lastDevice and m_lastFrame, respectively.
     static void SetDevice(const LEAP_DEVICE_INFO *deviceProps);
     static void SetFrame(const LEAP_TRACKING_EVENT *frame);
 
     // The actual message loop that the Leap Motion device "posts to."
-    static void MessageLoop(void *unused);
+    static void MessageLoop();
 
     // Callbacks for each of the Leap Motion events.
     // Most of these are not important for my purposes, and are therefore empty.
