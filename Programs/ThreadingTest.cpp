@@ -1,6 +1,7 @@
 #include <atomic>
 #include <thread>
 
+#include "HttpServer.hpp"
 #include "LeapDriver.hpp"
 #include "Visualizer.hpp"
 
@@ -13,23 +14,24 @@
 int main()
 {
     Input::Leap::LeapConnection connection;
-    while (!connection.IsConnected()) std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    while (!connection.IsConnected())
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
     // this is cleared inside of Input::DriverLoop
     Visualization::Renderables renderables;
-
-    std::atomic<bool> isRendering(true);
     std::atomic<bool> isRunning(true);
 
-    std::thread renderThread(Visualization::RenderLoop, std::ref(renderables),
-                             std::ref(isRendering));
-    std::thread driverThread(Input::DriverLoop, std::ref(connection), std::ref(renderables),
-                             std::ref(isRunning));
-    std::this_thread::sleep_for(std::chrono::seconds(10));
-    isRendering.store(false);
+    auto r_isRunning = std::ref(isRunning);
+    auto r_renderables = std::ref(renderables);
+    auto r_connection = std::ref(connection);
+
+    std::thread httpThread(Http::HttpServerLoop, r_isRunning);
+    std::thread driverThread(Input::DriverLoop, r_connection, r_renderables, r_isRunning);
+    std::thread renderThread(Visualization::RenderLoop, r_renderables, r_isRunning);
+
     renderThread.join();
-    isRunning.store(false);
     driverThread.join();
+    httpThread.join();
 
     return 0;
 }

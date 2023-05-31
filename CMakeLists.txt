@@ -114,15 +114,18 @@ add_executable(
     Input/SimulatedMouse.cpp
     Math/MathHelpers.cpp
     Math/Vector3Common.cpp
+    Programs/HttpServer.cpp
+    Programs/LeapDriver.cpp
     Programs/ThreadingTest.cpp
     Programs/Visualizer.cpp
-    Programs/LeapDriver.cpp
     Visualization/RaylibVisuals.cpp)
 
-copy_file_to_output_directory(${TEST_THREADING} ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
+copy_file_to_output_directory(${TEST_THREADING}
+                              ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
 
-target_include_directories(${TEST_THREADING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB}
-                                                 ${INCLUDE_RAYLIB} ${INCLUDE_LEAPSDK})
+target_include_directories(
+    ${TEST_THREADING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAYLIB}
+                              ${INCLUDE_LEAPSDK} ${INCLUDE_RAPIDJSON})
 
 target_compile_features(${TEST_THREADING} PRIVATE cxx_std_20)
 
