@@ -4,12 +4,15 @@
 #include <rcamera.h>
 
 #include <Visualization/RaylibVisuals.hpp>
+#include <iostream>
 
 namespace Visualization
 {
 
-void RenderLoop(Renderables& renderables, std::atomic<bool>& isRendering)
+void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
 {
+    std::cout << "Starting rendering thread..." << std::endl;
+
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Gesture Driver Debug Visualizer");
     SetTargetFPS(60);
 
@@ -23,7 +26,13 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRendering)
     Camera2D camera2D{};
     camera2D.zoom = 1.0f;
 
-    while (isRendering.load())
+    constexpr int rectCenterX = 100;
+    constexpr int rectCenterY = SCREEN_HEIGHT - 100;
+    constexpr int rectWidth = 200;
+    constexpr int rectHeight = 200;
+    constexpr int vectorLength = 100;
+
+    while (isRunning.load())
     {
         UpdateCamera(camera3D);
 
@@ -32,32 +41,29 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRendering)
 
         BeginMode3D(camera3D);
         DrawCartesianBasis();
-        for (int i = 0; i < renderables.hands.size(); i++) DrawHand(renderables.hands[i]);
+        for (int i = 0; i < renderables.hands.size(); i++)
+            DrawHand(renderables.hands[i]);
         EndMode3D();
 
         BeginMode2D(camera2D);
-        constexpr int rectCenterX = 100;
-        constexpr int rectCenterY = SCREEN_HEIGHT - 100;
+        const int cursorDirectionVecX =
+            static_cast<int>(renderables.cursorDirectionX * vectorLength);
+        // multiply by -1 because Y is down in screen space
+        const int cursorDirectionVecY =
+            static_cast<int>(-1.0f * renderables.cursorDirectionY * vectorLength);
 
-        constexpr int rectWidth = 200;
-        constexpr int rectHeight = 200;
-        constexpr int vectorLength = 100;
-
-        const int vectorX = static_cast<int>(renderables.cursorDirectionX * vectorLength);
-        const int vectorY = static_cast<int>(-1.0f * renderables.cursorDirectionY *
-                                             vectorLength);  // -1 because Y is down in screen space
-
-        const int debugVectorX =
+        const int fingerDirectionVecX =
             static_cast<int>(renderables.averageFingerDirectionX * vectorLength * 0.5f);
-        const int debugVectorY =
+        const int fingerDirectionVecY =
             static_cast<int>(-1.0f * renderables.averageFingerDirectionY * vectorLength * 0.5f);
 
         DrawRectangle(rectCenterX - (rectWidth / 2), rectCenterY - (rectHeight / 2),
                       rectCenterX + (rectWidth / 2), rectCenterY + (rectHeight / 2), DARKGRAY);
 
-        DrawLine(rectCenterX, rectCenterY, rectCenterX + vectorX, rectCenterY + vectorY, YELLOW);
-        DrawLine(rectCenterX, rectCenterY, rectCenterX + debugVectorX, rectCenterY + debugVectorY,
-                 PURPLE);
+        DrawLine(rectCenterX, rectCenterY, rectCenterX + cursorDirectionVecX,
+                 rectCenterY + cursorDirectionVecY, YELLOW);
+        DrawLine(rectCenterX, rectCenterY, rectCenterX + fingerDirectionVecX,
+                 rectCenterY + fingerDirectionVecY, PURPLE);
         EndMode2D();
 
         DrawText(renderables.leapDebugString.c_str(), 10, 10, 10, BLACK);
@@ -65,6 +71,7 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRendering)
     }
 
     CloseWindow();
+    std::cout << "Shutting down rendering thread..." << std::endl;
 }
 
 }  // namespace Visualization

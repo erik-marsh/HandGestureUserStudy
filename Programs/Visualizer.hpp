@@ -18,6 +18,6 @@ struct Renderables
     float cursorDirectionY;
 };
 
-void RenderLoop(Renderables& renderables, std::atomic<bool>& isRendering);
+void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning);
 
 }

@@ -4,6 +4,7 @@
 #include <Input/SimulatedMouse.hpp>
 #include <Math/Vector3Common.hpp>
 #include <chrono>
+#include <iostream>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -18,6 +19,8 @@ namespace Input
 void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& renderables,
                 std::atomic<bool>& isRunning)
 {
+    std::cout << "Starting Leap Motion driver thread..." << std::endl;
+
     using Clock = std::chrono::high_resolution_clock;
     using Time = std::chrono::high_resolution_clock::time_point;
     using Nanos = std::chrono::nanoseconds;
@@ -40,11 +43,12 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
         renderables.cursorDirectionX = 0.0f;
         renderables.cursorDirectionY = 0.0f;
 
+        LEAP_TRACKING_EVENT* leapFrame = connection.GetFrame();
+        if (!leapFrame)
+            continue;
+
         std::optional<Leap::ProcessedHandState> currentState = std::nullopt;
         bool isLeft = true;
-        LEAP_TRACKING_EVENT* leapFrame = connection.GetFrame();
-
-        if (!leapFrame) continue;
 
         for (int i = 0; i < leapFrame->nHands; i++)
         {
@@ -111,9 +115,11 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
 
         Time frameEnd = Clock::now();
         Nanos processingTime = frameEnd - frameStart;
-
-        if (processingTime.count() > 0) std::this_thread::sleep_for(frameTime - processingTime);
+        if (processingTime.count() > 0)
+            std::this_thread::sleep_for(frameTime - processingTime);
     }
+
+    std::cout << "Shutting down Leap Motion driver thread..." << std::endl;
 }
 
 }  // namespace Input
