@@ -4,6 +4,7 @@
 #include "HttpServer.hpp"
 #include "LeapDriver.hpp"
 #include "Visualizer.hpp"
+#include "Logging.hpp"
 
 // Note: if we update the hand state at 60Hz or less,
 // there is literally no reason to separate the processing and rendering threads.
@@ -11,6 +12,9 @@
 // since the processing time seems to be roughly 200-700us every frame.
 int main()
 {
+    Logging::Log(Logging::Events::Click{});
+    Logging::Log(Logging::Events::FieldCompletion{});
+
     Input::Leap::LeapConnection connection;
     while (!connection.IsConnected())
         std::this_thread::sleep_for(std::chrono::milliseconds(100));

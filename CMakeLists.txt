@@ -10,6 +10,7 @@ set(MAIN_EXECUTABLE_NAME gestureDriver)
 set(TEST_VIRTUAL_MOUSE virtualMouse)
 set(TEST_HTTP_SERVER httpServer)
 set(TEST_THREADING threadingTest)
+set(TEST_LOGGING loggingTest)
 
 # include directories
 set(INCLUDE_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/)
@@ -130,3 +131,11 @@ target_include_directories(
 target_compile_features(${TEST_THREADING} PRIVATE cxx_std_20)
 
 target_link_libraries(${TEST_THREADING} PRIVATE raylib LeapSDK::LeapC)
+
+# ============================================================
+# ================ Logging test configuration ================
+# ============================================================
+
+add_executable(${TEST_LOGGING} Programs/Testing/LoggerTest.cpp Programs/UserStudy/Logging.cpp)
+
+target_compile_features(${TEST_LOGGING} PRIVATE cxx_std_20)
