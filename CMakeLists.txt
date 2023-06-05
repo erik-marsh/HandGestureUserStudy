@@ -22,11 +22,19 @@ set(INCLUDE_LEAPSDK ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/include/)
 # ======================================
 # ========== Functions/macros ==========
 # ======================================
+# TODO: instead of macros, these could be custom targets that other targets can depend on
 macro(copy_file_to_output_directory target filename)
     add_custom_command(
         TARGET ${target}
         POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy ${filename} $<TARGET_FILE_DIR:${target}>)
+endmacro()
+
+macro(copy_directory_to_output_directory target dirroot dirname)
+    add_custom_command(
+        TARGET ${target}
+        POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory ${dirroot}/${dirname} $<TARGET_FILE_DIR:${target}>/${dirname})
 endmacro()
 
 # =======================================================
@@ -123,6 +131,7 @@ add_executable(
 
 copy_file_to_output_directory(${TEST_THREADING}
                               ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
+copy_directory_to_output_directory(${TEST_THREADING} ${CMAKE_CURRENT_SOURCE_DIR} www)
 
 target_include_directories(
     ${TEST_THREADING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAYLIB}
