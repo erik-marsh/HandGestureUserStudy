@@ -1,5 +1,6 @@
 #pragma once
 
+#include <Helpers/IsAnyOf.hpp>
 #include <array>
 #include <cstdint>
 #include <string>
@@ -67,9 +68,8 @@ struct TaskCompletion
 constexpr char DELIMITER = ';';
 
 template <typename T>
-concept Loggable = std::same_as<Events::Click, T> || std::same_as<Events::CursorPosition, T> ||
-                   std::same_as<Events::Keystroke, T> || std::same_as<Events::FieldCompletion, T> ||
-                   std::same_as<Events::TaskCompletion, T>;
+concept Loggable = IsAnyOf<T, Events::Click, Events::CursorPosition, Events::Keystroke,
+                           Events::FieldCompletion, Events::TaskCompletion>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Logger class declaration
