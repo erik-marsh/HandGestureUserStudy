@@ -12,9 +12,7 @@
 // since the processing time seems to be roughly 200-700us every frame.
 int main()
 {
-    Logging::Log(Logging::Events::Click{});
-    Logging::Log(Logging::Events::FieldCompletion{});
-
+    // initialize our resources
     Input::Leap::LeapConnection connection;
     while (!connection.IsConnected())
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
