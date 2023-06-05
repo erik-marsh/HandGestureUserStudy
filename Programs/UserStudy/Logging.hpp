@@ -8,6 +8,9 @@
 namespace Logging
 {
 
+///////////////////////////////////////////////////////////////////////////////
+// Event structures
+///////////////////////////////////////////////////////////////////////////////
 namespace Events
 {
 
@@ -57,19 +60,45 @@ struct TaskCompletion
 
 }  // namespace Events
 
+
+///////////////////////////////////////////////////////////////////////////////
+// Logger constants and etc
+///////////////////////////////////////////////////////////////////////////////
+constexpr char DELIMITER = ';';
+
 template <typename T>
 concept Loggable = std::same_as<Events::Click, T> || std::same_as<Events::CursorPosition, T> ||
                    std::same_as<Events::Keystroke, T> || std::same_as<Events::FieldCompletion, T> ||
                    std::same_as<Events::TaskCompletion, T>;
 
-template <Loggable T>
-void Log(T event);
+///////////////////////////////////////////////////////////////////////////////
+// Logger class declaration
+///////////////////////////////////////////////////////////////////////////////
+class Logger
+{
+   public:
+    Logger(std::string filename);
+    ~Logger();
 
-// forward template declarations
-template void Log(Events::Click);
-template void Log(Events::CursorPosition);
-template void Log(Events::Keystroke);
-template void Log(Events::FieldCompletion);
-template void Log(Events::TaskCompletion);
+    template <Loggable T>
+    void Log(T event);
+
+   private:
+    const std::string logFilename;
+
+    std::array<std::array<std::string, 1000>, 2> logDoubleBuffer;
+    int currBuffer;
+    int currIndex;
+    bool isFileInitialized;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Forward template declarations
+///////////////////////////////////////////////////////////////////////////////
+template void Logger::Log(Events::Click);
+template void Logger::Log(Events::CursorPosition);
+template void Logger::Log(Events::Keystroke);
+template void Logger::Log(Events::FieldCompletion);
+template void Logger::Log(Events::TaskCompletion);
 
 }  // namespace Logging
