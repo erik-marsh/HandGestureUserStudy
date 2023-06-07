@@ -1,3 +1,5 @@
+#pragma once
+
 #include <concepts>
 
 // https://stackoverflow.com/questions/73377786/c-concept-that-a-type-is-same-as-any-one-of-several-types
