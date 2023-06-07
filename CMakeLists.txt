@@ -19,28 +19,30 @@ set(INCLUDE_RAYLIB ${CMAKE_CURRENT_SOURCE_DIR}/raylib/src/)
 set(INCLUDE_RAPIDJSON ${CMAKE_CURRENT_SOURCE_DIR}/rapidjson/include/)
 set(INCLUDE_LEAPSDK ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/include/)
 
-# ======================================
-# ========== Functions/macros ==========
-# ======================================
-# TODO: instead of macros, these could be custom targets that other targets can depend on
-macro(copy_file_to_output_directory target filename)
-    add_custom_command(
-        TARGET ${target}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy ${filename} $<TARGET_FILE_DIR:${target}>)
-endmacro()
-
-macro(copy_directory_to_output_directory target dirroot dirname)
-    add_custom_command(
-        TARGET ${target}
-        POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_directory ${dirroot}/${dirname} $<TARGET_FILE_DIR:${target}>/${dirname})
-endmacro()
-
 # =======================================================
 # ========== Leap Motion library configuration ==========
 # =======================================================
 find_package(LeapSDK 5 PATHS ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/cmake/LeapSDK)
+
+add_custom_target(libLeapC)
+add_custom_command(
+    TARGET libLeapC
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll
+            ${CMAKE_BINARY_DIR}/$<CONFIG>
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/LeapC.dll)
+
+# =======================================================
+# =============== Static file server fles ===============
+# =======================================================
+add_custom_target(staticFiles)
+add_custom_command(
+    TARGET staticFiles
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/www
+            ${CMAKE_BINARY_DIR}/$<CONFIG>/www
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/www/
+)
 
 # ==================================================
 # ========== raylib library configuration ==========
@@ -69,8 +71,7 @@ add_executable(
     Programs/Old/GestureDriver.cpp
     Visualization/RaylibVisuals.cpp)
 
-copy_file_to_output_directory(${MAIN_EXECUTABLE_NAME}
-                              ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
+add_dependencies(${MAIN_EXECUTABLE_NAME} libLeapC)
 
 target_compile_features(${MAIN_EXECUTABLE_NAME} PRIVATE cxx_std_20)
 
@@ -92,8 +93,7 @@ target_compile_definitions(${MAIN_EXECUTABLE_NAME}
 
 add_executable(${TEST_VIRTUAL_MOUSE} Input/SimulatedMouse.cpp Programs/Testing/VirtualMouseTest.cpp)
 
-copy_file_to_output_directory(${TEST_VIRTUAL_MOUSE}
-                              ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
+add_dependencies(${TEST_VIRTUAL_MOUSE} libLeapC)
 
 target_compile_features(${TEST_VIRTUAL_MOUSE} PRIVATE cxx_std_20)
 
@@ -129,9 +129,7 @@ add_executable(
     Programs/UserStudy/Visualizer.cpp
     Visualization/RaylibVisuals.cpp)
 
-copy_file_to_output_directory(${TEST_THREADING}
-                              ${CMAKE_CURRENT_SOURCE_DIR}/LeapSDK/lib/x64/LeapC.dll)
-copy_directory_to_output_directory(${TEST_THREADING} ${CMAKE_CURRENT_SOURCE_DIR} www)
+add_dependencies(${TEST_THREADING} libLeapC staticFiles)
 
 target_include_directories(
     ${TEST_THREADING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAYLIB}
