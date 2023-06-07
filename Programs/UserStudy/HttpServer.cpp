@@ -125,6 +125,10 @@ void HttpServerLoop(std::atomic<bool>& isRunning)
                     }
                 });
 
+    server.Post("/events", [](const Req& req, Res& res){
+        std::cout << req.body << std::endl;
+    });
+
     server.listen("localhost", 5000);
 
     std::cout << "Shutting down HTTP thread..." << std::endl;
