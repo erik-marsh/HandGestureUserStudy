@@ -1,1 +1,23 @@
-<h1>Hello, world!</h1>
+<div class="userStudyField" data-field-index="1">
+    test field
+</div>
+
+<div class="userStudyField textInputField" data-field-index="2">
+    <textarea class="input" cols="50" rows="15" style="position: absolute; background: none; z-index: 10;"></textarea>
+    <textarea class="expected" cols="50" rows="15" style="position: absolute;" disabled>
+Expected text. The user will be required to type this whole string verbatim.
+    </textarea>
+    <!-- spacer -->
+    <!-- TODO: needs to be procedurally generated based on the height of the textareas -->
+    <div style="height: 250px;"></div>
+</div>
+
+<div class="userStudyField textInputField" data-field-index="3">
+    <textarea class="input" cols="50" rows="15" style="position: absolute; background: none; z-index: 10;"></textarea>
+    <textarea class="expected" cols="50" rows="15" style="position: absolute;" disabled>
+Expected text. This is another field that the user will be required to fill out.
+    </textarea>
+</div>
+
+<!-- needs to be at the end because DOM stuff -->
+<script src="keystrokes.js"></script>
