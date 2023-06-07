@@ -17,7 +17,7 @@ namespace Events
 
 enum class ClickLocation
 {
-    OutOfBounds,
+    OutOfBounds,  // TODO: this might not be necessary, and is for sure impossible to catch in JS
     Background,
     TextField,
     Button
