@@ -7,11 +7,7 @@
 </head>
 
 <body>
-  <div class="userStudyField" data-field-index="1">
-    test field
-  </div>
-
-  <div class="userStudyField textInputField" data-field-index="2">
+  <div class="userStudyField textInputField" data-field-index="1">
     <textarea class="form-control input" rows="3" style="position: absolute; background: none; z-index: 10;"></textarea>
     <textarea class="form-control expected" rows="3" style="position: absolute; background: none;" disabled>
 Expected text. The user will be required to type this whole string verbatim.
@@ -21,11 +17,16 @@ Expected text. The user will be required to type this whole string verbatim.
     <div style="height: 250px;"></div>
   </div>
 
-  <div class="userStudyField textInputField" data-field-index="3">
+  <div class="userStudyField textInputField" data-field-index="2">
     <textarea class="form-control input" rows="3" style="position: absolute; background: none; z-index: 10;"></textarea>
     <textarea class="form-control expected" rows="3" style="position: absolute; background: none;" disabled>
 Expected text. This is another field that the user will be required to fill out.
     </textarea>
+    <div style="height: 250px;"></div>
+  </div>
+
+  <div class="userStudyField" data-field-index="3">
+    <button class="form-control userStudyButton">Test button</button>
   </div>
 
   <!-- needs to be at the end because DOM stuff -->
