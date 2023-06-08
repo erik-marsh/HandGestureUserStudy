@@ -22,8 +22,6 @@ document.addEventListener("click", e => {
 
 Array.from(userStudyFields).forEach(field => {
     field.addEventListener("click", e => {
-        e.stopPropagation();
-
         const timestampMillis = Date.now();
         const fieldIndex = Number.parseInt(field.getAttribute("data-field-index"));
         const currentField = 2;  // TODO: dummy value, in reality this is in a global object somewhere
@@ -47,5 +45,7 @@ Array.from(userStudyFields).forEach(field => {
             console.log("... which was correct");
         else
             console.log("... which was incorrect");
+        
+        e.stopPropagation();
     });
 });
