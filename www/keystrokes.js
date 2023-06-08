@@ -1,6 +1,6 @@
 "use strict";
 
-const textFields = document.getElementsByClassName("text-input-field");
+const textFields = document.getElementsByClassName("user-study-field-text");
 Array.from(textFields).forEach(field => {
     const fieldIndex = field.getAttribute("data-field-index");
     const inputTextarea = field.getElementsByClassName("input")[0];

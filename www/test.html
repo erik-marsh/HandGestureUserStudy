@@ -7,7 +7,10 @@
 </head>
 
 <body>
-  <div class="user-study-field text-input-field" data-field-index="1">
+  <div class="user-study-field user-study-field-text" data-field-index="1">
+    <div class="user-study-field-text-label">
+      Label text
+    </div>
     <textarea class="form-control input" rows="3" style="position: absolute; background: none; z-index: 10;"></textarea>
     <textarea class="form-control expected" rows="3" style="position: absolute; background: none;" disabled>
 Expected text. The user will be required to type this whole string verbatim.
@@ -18,7 +21,7 @@ Expected text. The user will be required to type this whole string verbatim.
   <!-- TODO: needs to be procedurally generated based on the height of the textareas -->
   <div style="height: 250px;"></div>
 
-  <div class="user-study-field text-input-field" data-field-index="2">
+  <div class="user-study-field user-study-field-text" data-field-index="2">
     <textarea class="form-control input" rows="3" style="position: absolute; background: none; z-index: 10;"></textarea>
     <textarea class="form-control expected" rows="3" style="position: absolute; background: none;" disabled>
 Expected text. This is another field that the user will be required to fill out.
@@ -27,12 +30,8 @@ Expected text. This is another field that the user will be required to fill out.
   <div style="height: 250px;"></div>
 
   <div class="user-study-field" data-field-index="3">
-    <button class="form-control user-study-button">Test button</button>
+    <button class="form-control user-study-field-button">Test button</button>
   </div>
-
-  <!-- needs to be at the end because DOM stuff -->
-  <script src="keystrokes.js"></script>
-  <script src="clicks.js"></script>
 </body>
 
 </html>

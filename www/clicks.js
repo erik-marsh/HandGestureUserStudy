@@ -27,9 +27,9 @@ Array.from(userStudyFields).forEach(field => {
         const currentField = 2;  // TODO: dummy value, in reality this is in a global object somewhere
         
         let clickLocation = "";
-        if (field.classList.contains("text-input-field"))
+        if (field.classList.contains("user-study-field-text"))
             clickLocation = "TextField";
-        else if (field.classList.contains("user-study-button"))
+        else if (field.classList.contains("user-study-field-button"))
             clickLocation = "Button";
         else
             clickLocation = "OutOfBounds";

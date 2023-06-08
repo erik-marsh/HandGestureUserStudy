@@ -1,0 +1,15 @@
+.user-study-textarea {
+    overflow: hidden;
+    resize: none;
+    position: absolute;
+    background: none;
+  }
+
+  .user-study-textarea:disabled,
+  .user-study-textarea:focus {
+    background: none;
+  }
+
+  .input {
+    z-index: 10;
+  }
