@@ -127,7 +127,8 @@ add_executable(
     Programs/UserStudy/LeapDriver.cpp
     Programs/UserStudy/ThreadingTest.cpp
     Programs/UserStudy/Visualizer.cpp
-    Visualization/RaylibVisuals.cpp)
+    Visualization/RaylibVisuals.cpp
+    Helpers/UserIDLock.cpp)
 
 add_dependencies(${TEST_THREADING} libLeapC staticFiles)
 
