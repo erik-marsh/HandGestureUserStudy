@@ -34,17 +34,15 @@ Array.from(userStudyFields).forEach(field => {
         else
             clickLocation = "OutOfBounds";
         
-        clickEvents.push({
+        const newClick = {
             "timestampMillis": timestampMillis,
             "location": clickLocation,
             "wasCorrect": fieldIndex === currentField
-        });
+        };
+        clickEvents.push(newClick);
         
+        console.log(newClick);
         console.log("click HIT on fieldIndex=" + fieldIndex);
-        if (fieldIndex === currentField)
-            console.log("... which was correct");
-        else
-            console.log("... which was incorrect");
         
         e.stopPropagation();
     });
