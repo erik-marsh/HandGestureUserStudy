@@ -6,6 +6,10 @@
 
 let clickEvents = []
 
+// TODO: investigate https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+let currentField = 0;
+let numFields = 7;
+
 const userStudyFields = document.getElementsByClassName("user-study-field");
 
 // missed clicks will not be caught by the other handler and will bubble up to here
@@ -24,7 +28,7 @@ Array.from(userStudyFields).forEach(field => {
     field.addEventListener("click", e => {
         const timestampMillis = Date.now();
         const fieldIndex = Number.parseInt(field.getAttribute("data-field-index"));
-        const currentField = 2;  // TODO: dummy value, in reality this is in a global object somewhere
+        const wasCorrect = fieldIndex === currentField;
         
         let clickLocation = "";
         if (field.classList.contains("user-study-field-text"))
@@ -37,12 +41,32 @@ Array.from(userStudyFields).forEach(field => {
         const newClick = {
             "timestampMillis": timestampMillis,
             "location": clickLocation,
-            "wasCorrect": fieldIndex === currentField
+            "wasCorrect": wasCorrect
         };
         clickEvents.push(newClick);
         
         console.log(newClick);
         console.log("click HIT on fieldIndex=" + fieldIndex);
+
+        if (wasCorrect)
+        {
+            currentField++;
+        }
+
+        if (currentField == numFields)
+        {
+            // send timestamps
+            // TODO: we need to respond to field completion, not field clicks
+            fetch("/events", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(clickEvents)
+            });
+
+            // send signal to move on
+        }
         
         e.stopPropagation();
     });
