@@ -48,15 +48,15 @@ struct FieldCompletion
 {
     uint64_t timestampMillis;
     int fieldIndex;
-    int totalFields;  // TODO: unnecessary? (i remember this being a time-crunch hack)
+    //int totalFields;  // TODO: unnecessary? (i remember this being a time-crunch hack)
 };
 
 struct TaskCompletion
 {
     uint64_t timestampMillis;
     int taskIndex;
-    std::string taskName;  // TODO: unnecessary?
-    int totalTasks;        // TODO: unnecessary?
+    //std::string taskName;  // TODO: unnecessary?
+    //int totalTasks;        // TODO: unnecessary?
 };
 
 }  // namespace Events

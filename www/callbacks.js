@@ -1,26 +1,6 @@
 "use strict";
 
 ///////////////////////////////////////////////////////////////////////////////
-// Global state
-///////////////////////////////////////////////////////////////////////////////
-
-// load the fields embedded within the page
-const userStudyFields = document.getElementsByClassName("user-study-field");
-const userStudyTextFields = document.getElementsByClassName("user-study-field-text");
-const userStudyButtons = document.getElementsByClassName("user-study-field-button");
-
-// load the number of fields, used for tracking progress
-const totalFields = Array.from(userStudyFields).length;
-
-// variable state
-// TODO: investigate https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-let currentField = 0;
-
-// shared containers
-let clickEvents = [];
-
-
-///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -33,6 +13,64 @@ const sendEventsToServer = eventArray => {
         body: JSON.stringify(eventArray)
     });
 };
+
+///////////////////////////////////////////////////////////////////////////////
+// Global state
+///////////////////////////////////////////////////////////////////////////////
+
+// load the fields embedded within the page
+const userStudyFields = document.getElementsByClassName("user-study-field");
+const userStudyTextFields = document.getElementsByClassName("user-study-field-text");
+const userStudyButtons = document.getElementsByClassName("user-study-field-button");
+
+// load the number of fields, used for tracking progress
+const totalFields = Array.from(userStudyFields).length;
+
+// shared containers
+let clickEvents = [];
+
+// variable state
+// TODO: investigate https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
+// should not be accessed directly
+let __state = {
+    currentField: 0
+};
+
+const __stateHandler = {
+    set(obj, prop, value) {
+        console.log("Property " + prop + " of " + obj + " updated from " + obj[prop] + " to " + value);
+
+        if (prop === "currentField")
+        {
+            const completionTime = Date.now();
+
+            // send field completion event
+            sendEventsToServer({
+                timestampMillis: completionTime,
+                fieldIndex: obj[prop],
+                //totalFields: totalFields
+            });
+
+            // if we have now done all fields
+            if (value === totalFields)
+            {
+                console.log("task is complete");
+                sendEventsToServer(clickEvents);
+                clickEvents = [];
+                sendEventsToServer({
+                    timestampMillis: completionTime,
+                    taskIndex: "<UNKNOWN>",
+                    //taskName: "<UNKNOWN>",
+                    //totalTasks: "<UNKNOWN>"
+                });
+            }
+        }
+
+        return Reflect.set(...arguments);
+    }
+};
+
+let state = new Proxy(__state, __stateHandler);
 
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -82,10 +120,12 @@ Array.from(userStudyTextFields).forEach(field => {
             };
 
             sendEventsToServer(dataToSend);
+            state.currentField++;
         }
     };
     field.addEventListener("keyup", listener);
 });
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // Click listeners
@@ -104,10 +144,11 @@ document.addEventListener("click", e => {
 });
 
 Array.from(userStudyFields).forEach(field => {
+    const fieldIndex = Number.parseInt(field.getAttribute("data-field-index"));
+
     field.addEventListener("click", e => {
         const timestampMillis = Date.now();
-        const fieldIndex = Number.parseInt(field.getAttribute("data-field-index"));
-        const wasCorrect = fieldIndex === currentField;
+        const wasCorrect = fieldIndex === state.currentField;
         
         let clickLocation = "";
         if (field.classList.contains("user-study-field-text"))
@@ -127,25 +168,7 @@ Array.from(userStudyFields).forEach(field => {
         console.log(newClick);
         console.log("click HIT on fieldIndex=" + fieldIndex);
 
-        if (wasCorrect)
-        {
-            currentField++;
-        }
-
-        if (currentField == totalFields)
-        {
-            // send timestamps
-            // TODO: we need to respond to field completion, not field clicks
-            fetch("/events", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify(clickEvents)
-            });
-
-            // send signal to move on
-        }
+        // TODO: send events on TASK completion
         
         e.stopPropagation();
     });
