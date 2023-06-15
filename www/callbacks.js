@@ -13,6 +13,8 @@ const sendEventsToServer = (eventObject, eventType) => {
             "Content-Type": "application/json"
         },
         body: JSON.stringify(eventObject)
+    }).then(res => {
+        console.log("[DEBUG] Done. Got response " + res.status);
     });
 };
 
@@ -83,20 +85,20 @@ Array.from(userStudyTextFields).forEach(field => {
     // leading and trailing whitespace, so we trim those out.
     const expectedString = expectedTextarea.value.trim();
 
-    const makeKeystrokeEvent = (timestamp, keyupEvent, wasCorrect) => ({
-        "timestamp": timestamp,
-        "wasCorrect": wasCorrect,
-        "key": keyupEvent.key
+    const makeKeystrokeEvent = (timestampMillis, keyupEvent, wasCorrect) => ({
+        timestampMillis: timestampMillis,
+        wasCorrect: wasCorrect,
+        key: keyupEvent.key
     });
 
     let gatheredInputs = [];
 
     const listener = e => {
-        const timestamp = Date.now();
+        const timestampMillis = Date.now();
         const equalSoFar = expectedString.startsWith(inputTextarea.value);
         const equality = inputTextarea.value === expectedString;
 
-        gatheredInputs.push(makeKeystrokeEvent(timestamp, e, equalSoFar));
+        gatheredInputs.push(makeKeystrokeEvent(timestampMillis, e, equalSoFar));
 
         // TODO: horribly inefficient, prefer a data-* attribute approach
         inputTextarea.classList.remove("inprogress");
@@ -134,9 +136,9 @@ Array.from(userStudyTextFields).forEach(field => {
 document.addEventListener("click", e => {
     const timestampMillis = Date.now();
     clickEvents.push({
-        "timestampMillis": timestampMillis,
-        "location": "Background",
-        "wasCorrect": false
+        timestampMillis: timestampMillis,
+        location: "Background",
+        wasCorrect: false
     });
 
     console.log("[Clicks] Click missed.");
@@ -158,9 +160,9 @@ Array.from(userStudyFields).forEach(field => {
             clickLocation = "OutOfBounds";
         
         const newClick = {
-            "timestampMillis": timestampMillis,
-            "location": clickLocation,
-            "wasCorrect": wasCorrect
+            timestampMillis: timestampMillis,
+            location: clickLocation,
+            wasCorrect: wasCorrect
         };
         clickEvents.push(newClick);        
         console.log("[Clicks] Click successful on fieldIndex=" + fieldIndex);

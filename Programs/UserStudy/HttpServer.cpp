@@ -12,6 +12,8 @@
 #include <sstream>
 #include <string>
 
+#include "Logging.hpp"
+
 namespace Http
 {
 
@@ -147,18 +149,22 @@ struct Start : public RequestData_t
 
 struct EventFieldCompletion : public RequestData_t
 {
+    Logging::Events::FieldCompletion data;
 };
 
 struct EventTaskCompletion : public RequestData_t
 {
+    Logging::Events::TaskCompletion data;
 };
 
 struct EventClick : public RequestData_t
 {
+    std::vector<Logging::Events::Click> data;
 };
 
 struct EventKeystroke : public RequestData_t
 {
+    std::vector<Logging::Events::Keystroke> data;
 };
 
 // I don't exactly understand the rationale,
@@ -251,123 +257,129 @@ void HttpServerLoop(std::atomic<bool>& isRunning)
         std::cout << ss.str();
     };
 
-    server.Post("/events/click", [&printRequest](const Req& req, Res& res)
-    {
-        auto result = ParseRequest<EventClick>(req.body);
-        if (result.HasValue())
-        {
-            printRequest(req, res);
-            res.status = 200;
-            return;
-        }
-        switch (result.Error())
-        {
-            case ParseError::SchemaNotValidJSON:
-                std::cout << "Schema for EventClick was not valid." << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-            case ParseError::RequestNotValidJSON:
-                std::cout << "Request was not valid JSON." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            case ParseError::RequestDoesNotFollowSchema:
-                std::cout << "Request did not adhere to schema." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            default:
-                std::cout << "Parse failed but there was no error?" << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-        }
-    });
+    server.Post("/events/click",
+                [&printRequest](const Req& req, Res& res)
+                {
+                    auto result = ParseRequest<EventClick>(req.body);
+                    if (result.HasValue())
+                    {
+                        printRequest(req, res);
+                        res.status = 200;
+                        return;
+                    }
+                    switch (result.Error())
+                    {
+                        case ParseError::SchemaNotValidJSON:
+                            std::cout << "Schema for EventClick was not valid." << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                        case ParseError::RequestNotValidJSON:
+                            std::cout << "Request was not valid JSON." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        case ParseError::RequestDoesNotFollowSchema:
+                            std::cout << "Request did not adhere to schema." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        default:
+                            std::cout << "Parse failed but there was no error?" << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                    }
+                });
 
-    server.Post("/events/keystroke", [&printRequest](const Req& req, Res& res)
-    {
-        auto result = ParseRequest<EventKeystroke>(req.body);
-        if (result.HasValue())
-        {
-            printRequest(req, res);
-            res.status = 200;
-            return;
-        }
-        switch (result.Error())
-        {
-            case ParseError::SchemaNotValidJSON:
-                std::cout << "Schema for EventKeystroke was not valid." << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-            case ParseError::RequestNotValidJSON:
-                std::cout << "Request was not valid JSON." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            case ParseError::RequestDoesNotFollowSchema:
-                std::cout << "Request did not adhere to schema." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            default:
-                std::cout << "Parse failed but there was no error?" << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-        }
-    });
-    server.Post("/events/field", [&printRequest](const Req& req, Res& res)
-    {
-        auto result = ParseRequest<EventFieldCompletion>(req.body);
-        if (result.HasValue())
-        {
-            printRequest(req, res);
-            res.status = 200;
-            return;
-        }
-        switch (result.Error())
-        {
-            case ParseError::SchemaNotValidJSON:
-                std::cout << "Schema for EventFieldCompletion was not valid." << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-            case ParseError::RequestNotValidJSON:
-                std::cout << "Request was not valid JSON." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            case ParseError::RequestDoesNotFollowSchema:
-                std::cout << "Request did not adhere to schema." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            default:
-                std::cout << "Parse failed but there was no error?" << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-        }
-    });
-    server.Post("/events/task", [&printRequest](const Req& req, Res& res)
-    {
-        auto result = ParseRequest<EventTaskCompletion>(req.body);
-        if (result.HasValue())
-        {
-            printRequest(req, res);
-            res.status = 200;
-            return;
-        }
-        switch (result.Error())
-        {
-            case ParseError::SchemaNotValidJSON:
-                std::cout << "Schema for EventTaskCompletion was not valid." << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-            case ParseError::RequestNotValidJSON:
-                std::cout << "Request was not valid JSON." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            case ParseError::RequestDoesNotFollowSchema:
-                std::cout << "Request did not adhere to schema." << std::endl;
-                res.status = 400;  // 400 Bad Request
-                break;
-            default:
-                std::cout << "Parse failed but there was no error?" << std::endl;
-                res.status = 500;  // 500 Internal Server Error
-                break;
-        }
-    });
+    server.Post("/events/keystroke",
+                [&printRequest](const Req& req, Res& res)
+                {
+                    auto result = ParseRequest<EventKeystroke>(req.body);
+                    if (result.HasValue())
+                    {
+                        printRequest(req, res);
+                        res.status = 200;
+                        return;
+                    }
+                    switch (result.Error())
+                    {
+                        case ParseError::SchemaNotValidJSON:
+                            std::cout << "Schema for EventKeystroke was not valid." << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                        case ParseError::RequestNotValidJSON:
+                            std::cout << "Request was not valid JSON." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        case ParseError::RequestDoesNotFollowSchema:
+                            std::cout << "Request did not adhere to schema." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        default:
+                            std::cout << "Parse failed but there was no error?" << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                    }
+                });
+    server.Post("/events/field",
+                [&printRequest](const Req& req, Res& res)
+                {
+                    auto result = ParseRequest<EventFieldCompletion>(req.body);
+                    if (result.HasValue())
+                    {
+                        printRequest(req, res);
+                        res.status = 200;
+                        return;
+                    }
+                    switch (result.Error())
+                    {
+                        case ParseError::SchemaNotValidJSON:
+                            std::cout << "Schema for EventFieldCompletion was not valid."
+                                      << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                        case ParseError::RequestNotValidJSON:
+                            std::cout << "Request was not valid JSON." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        case ParseError::RequestDoesNotFollowSchema:
+                            std::cout << "Request did not adhere to schema." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        default:
+                            std::cout << "Parse failed but there was no error?" << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                    }
+                });
+    server.Post("/events/task",
+                [&printRequest](const Req& req, Res& res)
+                {
+                    auto result = ParseRequest<EventTaskCompletion>(req.body);
+                    if (result.HasValue())
+                    {
+                        printRequest(req, res);
+                        res.status = 200;
+                        return;
+                    }
+                    switch (result.Error())
+                    {
+                        case ParseError::SchemaNotValidJSON:
+                            std::cout << "Schema for EventTaskCompletion was not valid."
+                                      << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                        case ParseError::RequestNotValidJSON:
+                            std::cout << "Request was not valid JSON." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        case ParseError::RequestDoesNotFollowSchema:
+                            std::cout << "Request did not adhere to schema." << std::endl;
+                            res.status = 400;  // 400 Bad Request
+                            break;
+                        default:
+                            std::cout << "Parse failed but there was no error?" << std::endl;
+                            res.status = 500;  // 500 Internal Server Error
+                            break;
+                    }
+                });
 
     server.listen("localhost", 5000);
 
@@ -408,25 +420,62 @@ Start DeserializeRequest<Start>(rapidjson::Document& requestDocument)
 template <>
 EventFieldCompletion DeserializeRequest<EventFieldCompletion>(rapidjson::Document& requestDocument)
 {
-    return {};
+    EventFieldCompletion request;
+    request.data.timestampMillis = requestDocument["timestampMillis"].GetUint64();
+    request.data.fieldIndex = requestDocument["fieldIndex"].GetInt();
+    return request;
 }
 
 template <>
 EventTaskCompletion DeserializeRequest<EventTaskCompletion>(rapidjson::Document& requestDocument)
 {
-    return {};
+    EventTaskCompletion request;
+    request.data.timestampMillis = requestDocument["timestampMillis"].GetUint64();
+    request.data.taskIndex = requestDocument["taskIndex"].GetInt();
+    return request;
 }
 
 template <>
 EventClick DeserializeRequest<EventClick>(rapidjson::Document& requestDocument)
 {
-    return {};
+    EventClick request;
+    for (auto it = requestDocument.Begin(); it != requestDocument.End(); ++it)
+    {
+        std::string locationString = (*it)["location"].GetString();
+        Logging::Events::ClickLocation location;
+        if (locationString == "OutOfBounds")
+            location = Logging::Events::ClickLocation::OutOfBounds;
+        else if (locationString == "Background")
+            location = Logging::Events::ClickLocation::Background;
+        else if (locationString == "TextField")
+            location = Logging::Events::ClickLocation::TextField;
+        else if (locationString == "Button")
+            location = Logging::Events::ClickLocation::Button;
+        else
+            location = Logging::Events::ClickLocation::OutOfBounds;
+        
+        Logging::Events::Click event;
+        event.timestampMillis = (*it)["timestampMillis"].GetUint64();
+        event.wasCorrect = (*it)["wasCorrect"].GetBool();
+        event.location = location;
+        request.data.push_back(event);
+    }
+    return request;
 }
 
 template <>
 EventKeystroke DeserializeRequest<EventKeystroke>(rapidjson::Document& requestDocument)
 {
-    return {};
+    EventKeystroke request;
+    for (auto it = requestDocument.Begin(); it != requestDocument.End(); ++it)
+    {
+        Logging::Events::Keystroke event;
+        event.timestampMillis = (*it)["timestampMillis"].GetUint64();
+        event.keycode = '\0';  // TODO: oh HELL no i am not doing this today
+        event.wasCorrect = (*it)["wasCorrect"].GetBool();
+        request.data.push_back(event);
+    }
+    return request;
 }
 
 template <>
