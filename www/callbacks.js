@@ -4,13 +4,15 @@
 // Helper functions
 ///////////////////////////////////////////////////////////////////////////////
 
-const sendEventsToServer = eventArray => {
-    fetch("/events", {
+const sendEventsToServer = (eventObject, eventType) => {
+    console.log("[DEBUG] Sending events to server...");
+    console.log(eventObject);
+    fetch(`/events/${eventType}`, {
         method: "POST",
         headers: {
             "Content-Type": "application/json"
         },
-        body: JSON.stringify(eventArray)
+        body: JSON.stringify(eventObject)
     });
 };
 
@@ -48,20 +50,17 @@ const __stateHandler = {
             sendEventsToServer({
                 timestampMillis: completionTime,
                 fieldIndex: obj[prop],
-                //totalFields: totalFields
-            });
+            }, "field");
 
             // if we have now done all fields
             if (value === totalFields) {
                 console.log("[Study Control] Task completed.");
-                sendEventsToServer(clickEvents);
+                sendEventsToServer(clickEvents, "click");
                 clickEvents = [];
                 sendEventsToServer({
                     timestampMillis: completionTime,
-                    taskIndex: "<UNKNOWN>",
-                    //taskName: "<UNKNOWN>",
-                    //totalTasks: "<UNKNOWN>"
-                });
+                    taskIndex: -1,  // TODO: idk how i want to retrieve this value tbh
+                }, "task");
             }
         }
 
@@ -91,10 +90,6 @@ Array.from(userStudyTextFields).forEach(field => {
     });
 
     let gatheredInputs = [];
-    let completion = {
-        "timestamp": null,
-        "fieldIndex": fieldIndex
-    };
 
     const listener = e => {
         const timestamp = Date.now();
@@ -115,7 +110,6 @@ Array.from(userStudyTextFields).forEach(field => {
         }
 
         if (equality) {
-            completion.timestamp = timestamp;
             console.log("[Keystrokes] Field has been completed, moving on...");
             inputTextarea.setAttribute("disabled", "");
             inputTextarea.classList.remove("inprogress");
@@ -124,12 +118,7 @@ Array.from(userStudyTextFields).forEach(field => {
             inputTextarea.classList.add("completed")
             field.removeEventListener("keyup", listener);
 
-            const dataToSend = {
-                "keystrokes": gatheredInputs,
-                "completion": completion
-            };
-
-            sendEventsToServer(dataToSend);
+            sendEventsToServer(gatheredInputs, "keystroke");
             state.currentField++;
         }
     };

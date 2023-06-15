@@ -9,6 +9,8 @@
 #include <Helpers/Expected.hpp>
 #include <Helpers/IsAnyOf.hpp>
 #include <iostream>
+#include <sstream>
+#include <string>
 
 namespace Http
 {
@@ -31,6 +33,106 @@ std::string SCHEMA_START = R"(
 }
 )";
 
+std::string SCHEMA_EVENTS_CLICK = R"(
+{
+    "title": "Request_Events_Click",
+    "type": "array",
+    "items": {
+        "$ref": "#/$defs/click"
+    },
+    "$defs": {
+        "click": {
+            "type": "object",
+            "properties": {
+                "timestampMillis": {
+                    "type": "integer",
+                    "description": "The Unix time (in milliseconds) at which the event occurred."
+                },
+                "location": {
+                    "type": "string",
+                    "description": "The location on the page that the click was heard at."
+                },
+                "wasCorrect": {
+                    "type": "boolean",
+                    "description": "Did the click hit the part of the page it was supposed to at this time?"
+                }
+            },
+            "required": ["timestampMillis", "location", "wasCorrect"],
+            "unevaluatedProperties": false
+        }
+    }
+}
+)";
+
+std::string SCHEMA_EVENTS_KEYSTROKE = R"(
+{
+    "title": "Request_Events_Keystroke",
+    "type": "array",
+    "items": {
+        "$ref": "#/$defs/keystroke"
+    },
+    "$defs": {
+        "keystroke": {
+            "type": "object",
+            "properties": {
+                "timestampMillis": {
+                    "type": "integer",
+                    "description": "The Unix time (in milliseconds) at which the event occurred."
+                },
+                "keycode": {
+                    "type": "string",
+                    "description": "The key that was pressed."
+                },
+                "wasCorrect": {
+                    "type": "boolean",
+                    "description": "Was this character valid input?"
+                }
+            },
+            "required": ["timestampMillis", "keycode", "wasCorrect"],
+            "unevaluatedProperties": false
+        }
+    }
+}
+)";
+
+std::string SCHEMA_EVENTS_FIELD = R"(
+{
+    "title": "Request_Events_Field",
+    "type": "object",
+    "properties": {
+        "timestampMillis": {
+            "type": "integer",
+            "description": "The Unix time (in milliseconds) at which the event occurred."
+        },
+        "fieldIndex": {
+            "type": "integer",
+            "description": "The index of the field that was completed."
+        }
+    },
+    "requried": ["timestampMillis", "fieldIndex"],
+    "unevaluatedProperties": false
+}
+)";
+
+std::string SCHEMA_EVENTS_TASK = R"(
+{
+    "title": "Request_Events_Task",
+    "type": "object",
+    "properties": {
+        "timestampMillis": {
+            "type": "integer",
+            "description": "The Unix time (in milliseconds) at which the event occurred."
+        },
+        "taskIndex": {
+            "type": "integer",
+            "description": "The index of the task that was completed."
+        }
+    },
+    "requried": ["timestampMillis", "taskIndex"],
+    "unevaluatedProperties": false
+}
+)";
+
 // https://stackoverflow.com/questions/15911890/overriding-return-type-in-function-template-specialization
 // note that the specializations on the struct types are not necessary
 // was this a change made in a later c++ standard?
@@ -41,6 +143,22 @@ struct RequestData_t
 struct Start : public RequestData_t
 {
     int userId;
+};
+
+struct EventFieldCompletion : public RequestData_t
+{
+};
+
+struct EventTaskCompletion : public RequestData_t
+{
+};
+
+struct EventClick : public RequestData_t
+{
+};
+
+struct EventKeystroke : public RequestData_t
+{
 };
 
 // I don't exactly understand the rationale,
@@ -99,7 +217,8 @@ void HttpServerLoop(std::atomic<bool>& isRunning)
                     auto result = ParseRequest<Start>(req.body);
                     if (result.HasValue())
                     {
-                        std::cout << "Starting user study for user id " << result.Value().userId << std::endl;
+                        std::cout << "Starting user study for user id " << result.Value().userId
+                                  << std::endl;
                         res.status = 200;  // 200 OK
                         return;
                     }
@@ -125,8 +244,129 @@ void HttpServerLoop(std::atomic<bool>& isRunning)
                     }
                 });
 
-    server.Post("/events", [](const Req& req, Res& res){
-        std::cout << req.body << std::endl;
+    auto printRequest = [](const Req& req, Res& res)
+    {
+        std::stringstream ss;
+        ss << "[" << req.path << "] " << req.body << "\n";
+        std::cout << ss.str();
+    };
+
+    server.Post("/events/click", [&printRequest](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventClick>(req.body);
+        if (result.HasValue())
+        {
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        switch (result.Error())
+        {
+            case ParseError::SchemaNotValidJSON:
+                std::cout << "Schema for EventClick was not valid." << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+            case ParseError::RequestNotValidJSON:
+                std::cout << "Request was not valid JSON." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            case ParseError::RequestDoesNotFollowSchema:
+                std::cout << "Request did not adhere to schema." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            default:
+                std::cout << "Parse failed but there was no error?" << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+        }
+    });
+
+    server.Post("/events/keystroke", [&printRequest](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventKeystroke>(req.body);
+        if (result.HasValue())
+        {
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        switch (result.Error())
+        {
+            case ParseError::SchemaNotValidJSON:
+                std::cout << "Schema for EventKeystroke was not valid." << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+            case ParseError::RequestNotValidJSON:
+                std::cout << "Request was not valid JSON." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            case ParseError::RequestDoesNotFollowSchema:
+                std::cout << "Request did not adhere to schema." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            default:
+                std::cout << "Parse failed but there was no error?" << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+        }
+    });
+    server.Post("/events/field", [&printRequest](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventFieldCompletion>(req.body);
+        if (result.HasValue())
+        {
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        switch (result.Error())
+        {
+            case ParseError::SchemaNotValidJSON:
+                std::cout << "Schema for EventFieldCompletion was not valid." << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+            case ParseError::RequestNotValidJSON:
+                std::cout << "Request was not valid JSON." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            case ParseError::RequestDoesNotFollowSchema:
+                std::cout << "Request did not adhere to schema." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            default:
+                std::cout << "Parse failed but there was no error?" << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+        }
+    });
+    server.Post("/events/task", [&printRequest](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventTaskCompletion>(req.body);
+        if (result.HasValue())
+        {
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        switch (result.Error())
+        {
+            case ParseError::SchemaNotValidJSON:
+                std::cout << "Schema for EventTaskCompletion was not valid." << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+            case ParseError::RequestNotValidJSON:
+                std::cout << "Request was not valid JSON." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            case ParseError::RequestDoesNotFollowSchema:
+                std::cout << "Request did not adhere to schema." << std::endl;
+                res.status = 400;  // 400 Bad Request
+                break;
+            default:
+                std::cout << "Parse failed but there was no error?" << std::endl;
+                res.status = 500;  // 500 Internal Server Error
+                break;
+        }
     });
 
     server.listen("localhost", 5000);
@@ -166,9 +406,57 @@ Start DeserializeRequest<Start>(rapidjson::Document& requestDocument)
 }
 
 template <>
+EventFieldCompletion DeserializeRequest<EventFieldCompletion>(rapidjson::Document& requestDocument)
+{
+    return {};
+}
+
+template <>
+EventTaskCompletion DeserializeRequest<EventTaskCompletion>(rapidjson::Document& requestDocument)
+{
+    return {};
+}
+
+template <>
+EventClick DeserializeRequest<EventClick>(rapidjson::Document& requestDocument)
+{
+    return {};
+}
+
+template <>
+EventKeystroke DeserializeRequest<EventKeystroke>(rapidjson::Document& requestDocument)
+{
+    return {};
+}
+
+template <>
 std::string GetRequestSchema<Start>()
 {
     return SCHEMA_START;
+}
+
+template <>
+std::string GetRequestSchema<EventFieldCompletion>()
+{
+    return SCHEMA_EVENTS_FIELD;
+}
+
+template <>
+std::string GetRequestSchema<EventTaskCompletion>()
+{
+    return SCHEMA_EVENTS_TASK;
+}
+
+template <>
+std::string GetRequestSchema<EventClick>()
+{
+    return SCHEMA_EVENTS_CLICK;
+}
+
+template <>
+std::string GetRequestSchema<EventKeystroke>()
+{
+    return SCHEMA_EVENTS_KEYSTROKE;
 }
 
 }  // namespace Http
