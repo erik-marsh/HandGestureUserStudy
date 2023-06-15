@@ -38,12 +38,13 @@ let __state = {
 
 const __stateHandler = {
     set(obj, prop, value) {
-        console.log("Property " + prop + " of " + obj + " updated from " + obj[prop] + " to " + value);
+        console.log("[DEBUG] Property " + prop + " of " + obj + " updated from " + obj[prop] + " to " + value);
 
         if (prop === "currentField") {
             const completionTime = Date.now();
 
             // send field completion event
+            console.log("[Study Control] Field completed.");
             sendEventsToServer({
                 timestampMillis: completionTime,
                 fieldIndex: obj[prop],
@@ -52,7 +53,7 @@ const __stateHandler = {
 
             // if we have now done all fields
             if (value === totalFields) {
-                console.log("task is complete");
+                console.log("[Study Control] Task completed.");
                 sendEventsToServer(clickEvents);
                 clickEvents = [];
                 sendEventsToServer({
@@ -102,15 +103,26 @@ Array.from(userStudyTextFields).forEach(field => {
 
         gatheredInputs.push(makeKeystrokeEvent(timestamp, e, equalSoFar));
 
-        inputTextarea.style.color = equalSoFar ? "black" : "red";
+        // TODO: horribly inefficient, prefer a data-* attribute approach
+        inputTextarea.classList.remove("inprogress");
+        inputTextarea.classList.remove("error");
+        inputTextarea.classList.remove("completed");
+
+        if (equalSoFar) {
+            inputTextarea.classList.add("inprogress");
+        } else {
+            inputTextarea.classList.add("error");
+        }
 
         if (equality) {
             completion.timestamp = timestamp;
-            console.log("Field has been completed, moving on...");
+            console.log("[Keystrokes] Field has been completed, moving on...");
             inputTextarea.setAttribute("disabled", "");
-            inputTextarea.style.color = "green";
+            inputTextarea.classList.remove("inprogress");
+            inputTextarea.classList.remove("error");
+            inputTextarea.classList.remove("completed");
+            inputTextarea.classList.add("completed")
             field.removeEventListener("keyup", listener);
-            // TODO: need to re-enable background
 
             const dataToSend = {
                 "keystrokes": gatheredInputs,
@@ -138,7 +150,7 @@ document.addEventListener("click", e => {
         "wasCorrect": false
     });
 
-    console.log("click MISSED");
+    console.log("[Clicks] Click missed.");
 });
 
 Array.from(userStudyFields).forEach(field => {
@@ -162,7 +174,7 @@ Array.from(userStudyFields).forEach(field => {
             "wasCorrect": wasCorrect
         };
         clickEvents.push(newClick);        
-        console.log("click HIT on fieldIndex=" + fieldIndex);
+        console.log("[Clicks] Click successful on fieldIndex=" + fieldIndex);
         
         e.stopPropagation();
     });
@@ -177,6 +189,7 @@ Array.from(userStudyButtons).forEach(field => {
     field.addEventListener("click", e => {
         const wasCorrect = fieldIndex === state.currentField;
         if (wasCorrect) {
+            console.log("[Clicks] Clicked the correct button.");
             state.currentField++;
         }
     });

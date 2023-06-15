@@ -1,15 +1,35 @@
 .user-study-textarea {
-    overflow: hidden;
-    resize: none;
-    background: none;
-  }
+  overflow: hidden;
+  resize: none;
+}
 
-  .user-study-textarea:disabled,
-  .user-study-textarea:focus {
-    background: none;
-  }
+.expected.user-study-textarea,
+.expected.user-study-textarea:focus,
+.expected.user-study-textarea:disabled {
+  background: none;
+}
 
-  .input {
-    z-index: 10;
-    position: absolute;
-  }
+.inprogress.input.user-study-textarea,
+.inprogress.input.user-study-textarea:focus,
+.inprogress.input.user-study-textarea:disabled {
+  color: black;
+  background: none;
+}
+
+.completed.input.user-study-textarea,
+.completed.input.user-study-textarea:focus,
+.completed.input.user-study-textarea:disabled {
+  color: green;
+}
+
+.error.input.user-study-textarea,
+.error.input.user-study-textarea:focus,
+.error.input.user-study-textarea:disabled {
+  color: red;
+  background: none;
+}
+
+.input {
+  z-index: 10;
+  position: absolute;
+}
