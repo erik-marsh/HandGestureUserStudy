@@ -40,8 +40,7 @@ const __stateHandler = {
     set(obj, prop, value) {
         console.log("Property " + prop + " of " + obj + " updated from " + obj[prop] + " to " + value);
 
-        if (prop === "currentField")
-        {
+        if (prop === "currentField") {
             const completionTime = Date.now();
 
             // send field completion event
@@ -52,8 +51,7 @@ const __stateHandler = {
             });
 
             // if we have now done all fields
-            if (value === totalFields)
-            {
+            if (value === totalFields) {
                 console.log("task is complete");
                 sendEventsToServer(clickEvents);
                 clickEvents = [];
@@ -163,13 +161,23 @@ Array.from(userStudyFields).forEach(field => {
             "location": clickLocation,
             "wasCorrect": wasCorrect
         };
-        clickEvents.push(newClick);
-        
-        console.log(newClick);
+        clickEvents.push(newClick);        
         console.log("click HIT on fieldIndex=" + fieldIndex);
-
-        // TODO: send events on TASK completion
         
         e.stopPropagation();
+    });
+});
+
+// listeners for buttons
+// clicking the buttons should be considered "moving on"
+// TODO: need to change button colors as well
+Array.from(userStudyButtons).forEach(field => {
+    const fieldIndex = Number.parseInt(field.getAttribute("data-field-index"));
+
+    field.addEventListener("click", e => {
+        const wasCorrect = fieldIndex === state.currentField;
+        if (wasCorrect) {
+            state.currentField++;
+        }
     });
 });
