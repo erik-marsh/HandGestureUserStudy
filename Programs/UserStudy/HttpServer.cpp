@@ -471,7 +471,7 @@ EventKeystroke DeserializeRequest<EventKeystroke>(rapidjson::Document& requestDo
     {
         Logging::Events::Keystroke event;
         event.timestampMillis = (*it)["timestampMillis"].GetUint64();
-        event.keycode = '\0';  // TODO: oh HELL no i am not doing this today
+        event.key = (*it)["key"].GetString();
         event.wasCorrect = (*it)["wasCorrect"].GetBool();
         request.data.push_back(event);
     }

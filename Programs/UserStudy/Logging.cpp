@@ -123,7 +123,7 @@ std::string SerializeEvent(Events::Keystroke event)
 {
     std::stringstream ss;
     ss << std::boolalpha << EventTypeToString<Events::Keystroke>() << DELIMITER
-       << event.timestampMillis << DELIMITER << event.keycode << DELIMITER << event.wasCorrect;
+       << event.timestampMillis << DELIMITER << event.key << DELIMITER << event.wasCorrect;
     return ss.str();
 }
 
@@ -132,7 +132,7 @@ std::string SerializeEvent(Events::FieldCompletion event)
 {
     std::stringstream ss;
     ss << std::boolalpha << EventTypeToString<Events::FieldCompletion>() << DELIMITER
-       << event.timestampMillis << DELIMITER << event.fieldIndex << DELIMITER << event.totalFields;
+       << event.timestampMillis << DELIMITER << event.fieldIndex;
     return ss.str();
 }
 
@@ -141,8 +141,7 @@ std::string SerializeEvent(Events::TaskCompletion event)
 {
     std::stringstream ss;
     ss << std::boolalpha << EventTypeToString<Events::TaskCompletion>() << DELIMITER
-       << event.timestampMillis << DELIMITER << event.taskIndex << DELIMITER << event.taskName
-       << DELIMITER << event.totalTasks;
+       << event.timestampMillis << DELIMITER << event.taskIndex;
     return ss.str();
 }
 

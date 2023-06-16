@@ -40,7 +40,7 @@ struct CursorPosition
 struct Keystroke
 {
     uint64_t timestampMillis;
-    char keycode;
+    std::string key;
     bool wasCorrect;
 };
 
@@ -48,15 +48,12 @@ struct FieldCompletion
 {
     uint64_t timestampMillis;
     int fieldIndex;
-    //int totalFields;  // TODO: unnecessary? (i remember this being a time-crunch hack)
 };
 
 struct TaskCompletion
 {
     uint64_t timestampMillis;
     int taskIndex;
-    //std::string taskName;  // TODO: unnecessary?
-    //int totalTasks;        // TODO: unnecessary?
 };
 
 }  // namespace Events
