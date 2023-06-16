@@ -5,6 +5,6 @@
 namespace Http
 {
 
-void HttpServerLoop(std::atomic<bool>& isRunning);
+void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive);
 
 }

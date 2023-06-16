@@ -111,7 +111,34 @@ auto printRequest = [](const Req& req, Res& res)
     std::cout << ss.str();
 };
 
-void HttpServerLoop(std::atomic<bool>& isRunning)
+enum class InputDevice
+{
+    Mouse,
+    LeapMotion
+};
+
+enum class Task
+{
+    Form,
+    Email
+};
+
+constexpr std::array<Task, 2> TASK_SEQUENCE = {Task::Form, Task::Email};
+
+// 2x2 latin square
+constexpr std::array<std::array<InputDevice, 2>, 2> COUNTERBALANCING_SEQUENCE = {
+    {{InputDevice::Mouse, InputDevice::LeapMotion}, {InputDevice::LeapMotion, InputDevice::Mouse}}};
+
+struct StudyState
+{
+    bool isStudyDone;
+    int userId;
+    int counterbalancingIndex;
+    int currentTaskIndex;
+    int currentDeviceIndex;
+};
+
+void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
 {
     std::cout << "Starting HTTP thread..." << std::endl;
     httplib::Server server;
@@ -123,78 +150,121 @@ void HttpServerLoop(std::atomic<bool>& isRunning)
         return;
     }
 
-    server.Post("/quit",
-                [&server, &isRunning](const Req& req, Res& res)
-                {
-                    std::cout << "Server got shutdown signal, shutting down threads..."
-                              << std::endl;
-                    server.stop();
-                    isRunning.store(false);
-                });
+    StudyState state{};
 
-    server.Post("/start",
-                [](const Req& req, Res& res)
-                {
-                    auto result = ParseRequest<Start>(req.body);
-                    if (result.HasValue())
-                    {
-                        std::cout << "Starting user study for user id " << result.Value().userId
-                                  << std::endl;
-                        res.status = 200;  // 200 OK
-                        return;
-                    }
-                    parseErrorHandler(req, res, result.Error());
-                });
+    auto quitHandler = [&server, &isRunning](const Req& req, Res& res)
+    {
+        std::cout << "Server got shutdown signal, shutting down threads..." << std::endl;
+        server.stop();
+        isRunning.store(false);
+    };
+    server.Post("/quit", quitHandler);
 
-    server.Post("/events/click",
-                [](const Req& req, Res& res)
-                {
-                    auto result = ParseRequest<EventClick>(req.body);
-                    if (result.HasValue())
-                    {
-                        printRequest(req, res);
-                        res.status = 200;
-                        return;
-                    }
-                    parseErrorHandler(req, res, result.Error());
-                });
+    auto startHandler = [&state, &isLeapDriverActive](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<Start>(req.body);
+        if (result.HasValue())
+        {
+            state.userId = result.Value().userId;
+            state.counterbalancingIndex = state.userId % 2;
 
-    server.Post("/events/keystroke",
-                [](const Req& req, Res& res)
-                {
-                    auto result = ParseRequest<EventKeystroke>(req.body);
-                    if (result.HasValue())
-                    {
-                        printRequest(req, res);
-                        res.status = 200;
-                        return;
-                    }
-                    parseErrorHandler(req, res, result.Error());
-                });
-    server.Post("/events/field",
-                [](const Req& req, Res& res)
-                {
-                    auto result = ParseRequest<EventFieldCompletion>(req.body);
-                    if (result.HasValue())
-                    {
-                        printRequest(req, res);
-                        res.status = 200;
-                        return;
-                    }
-                    parseErrorHandler(req, res, result.Error());
-                });
-    server.Post("/events/task",
-                [](const Req& req, Res& res)
-                {
-                    auto result = ParseRequest<EventTaskCompletion>(req.body);
-                    if (result.HasValue())
-                    {
-                        printRequest(req, res);
-                        res.status = 200;
-                        return;
-                    }
-                    parseErrorHandler(req, res, result.Error());
-                });
+            // TODO: need to test this to make sure the device (de)activation works
+            auto deviceSequence = COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex];
+            auto activeDevice = deviceSequence[0];
+            isLeapDriverActive.store(activeDevice == InputDevice::LeapMotion);
+
+            std::cout << "Starting user study for user id " << state.userId
+                      << " (counterbalancing index=" << state.counterbalancingIndex << ")"
+                      << std::endl;
+            res.status = 200;  // 200 OK
+            return;
+        }
+        parseErrorHandler(req, res, result.Error());
+    };
+    server.Post("/start", startHandler);
+
+    // logging only
+    auto eventsClickHandler = [](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventClick>(req.body);
+        if (result.HasValue())
+        {
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        parseErrorHandler(req, res, result.Error());
+    };
+    server.Post("/events/click", eventsClickHandler);
+
+    // logging only
+    auto eventsKeystrokeHandler = [](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventKeystroke>(req.body);
+        if (result.HasValue())
+        {
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        parseErrorHandler(req, res, result.Error());
+    };
+    server.Post("/events/keystroke", eventsKeystrokeHandler);
+
+    // logging only, relevant state is client-side only
+    auto eventsFieldHandler = [](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventFieldCompletion>(req.body);
+        if (result.HasValue())
+        {
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        parseErrorHandler(req, res, result.Error());
+    };
+    server.Post("/events/field", eventsFieldHandler);
+
+    // we actually need to do state updates here
+    auto eventsTaskHandler = [&state, &isLeapDriverActive](const Req& req, Res& res)
+    {
+        auto result = ParseRequest<EventTaskCompletion>(req.body);
+        if (result.HasValue())
+        {
+            state.currentTaskIndex++;
+            if (state.currentTaskIndex == TASK_SEQUENCE.size())
+            {
+                state.currentTaskIndex = 0;
+                state.currentDeviceIndex++;
+            }
+
+            if (state.currentDeviceIndex ==
+                COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex].size())
+            {
+                state.isStudyDone = true;
+            }
+
+            // TODO: need to test this to make sure the device (de)activation works
+            auto deviceSequence = COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex];
+            auto activeDevice = deviceSequence[0];
+            isLeapDriverActive.store(activeDevice == InputDevice::LeapMotion);
+
+            std::stringstream ss;
+            ss << "Study state:"
+               << "\n    Done?: " << std::boolalpha << state.isStudyDone
+               << "\n    userId: " << state.userId
+               << "\n    counterbalancingIndex: " << state.counterbalancingIndex
+               << "\n    currentTaskIndex: " << state.currentTaskIndex
+               << "\n    currentDeviceIndex: " << state.currentDeviceIndex << std::endl;
+            std::cout << ss.str();
+
+            printRequest(req, res);
+            res.status = 200;
+            return;
+        }
+        parseErrorHandler(req, res, result.Error());
+    };
+    server.Post("/events/task", eventsTaskHandler);
 
     server.listen("localhost", 5000);
 

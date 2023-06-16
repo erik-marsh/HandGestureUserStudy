@@ -16,7 +16,7 @@ namespace Input
 {
 
 void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& renderables,
-                std::atomic<bool>& isRunning)
+                std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
 {
     std::cout << "Starting Leap Motion driver thread..." << std::endl;
 
@@ -30,6 +30,10 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
 
     while (isRunning.load())
     {
+        // TODO: do something else that isn't a spinlock
+        while (!isLeapDriverActive.load() && isRunning.load())
+            ;
+
         Time frameStart = Clock::now();
 
         // clear out renderables
