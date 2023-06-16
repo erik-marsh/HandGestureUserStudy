@@ -15,7 +15,6 @@ using Vec3 = Math::Vector3Common;
 namespace Input
 {
 
-// TODO: needs a deltaTime param so cursor movement doesn't move at lightspeed
 void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& renderables,
                 std::atomic<bool>& isRunning)
 {
@@ -34,8 +33,9 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
         Time frameStart = Clock::now();
 
         // clear out renderables
-        // TODO: synchronization: wrap in mutex; renderer should not be able to start rendering
-        // unless the lock is released i think
+        // TODO: investigate whether or not this needs to be synchronized with a mutex
+        // if unsynced i would imagine it leads to frame tearing (not a huge deal here),
+        // but we may run into issues when reading strings
         renderables.leapDebugString = "";
         renderables.hands.clear();
         renderables.averageFingerDirectionX = 0.0f;

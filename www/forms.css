@@ -9,6 +9,11 @@
   background: none;
 }
 
+/* TODO: there needs to be more visual indication of status.
+         i'm thinking... highlights *around* the fields with the color?
+         this is kinda necessary for the button case anyway
+*/
+
 .input.user-study-textarea[data-input-state=progress],
 .input.user-study-textarea:focus[data-input-state=progress],
 .input.user-study-textarea:disabled[data-input-state=progress] {

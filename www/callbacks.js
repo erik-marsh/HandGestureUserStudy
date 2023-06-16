@@ -34,8 +34,7 @@ const totalFields = Array.from(userStudyFields).length;
 let clickEvents = [];
 
 // variable state
-// TODO: investigate https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy
-// should not be accessed directly
+// should not be accessed directly, only by the proxy declared below
 let __state = {
     currentField: 0
 };
