@@ -100,24 +100,16 @@ Array.from(userStudyTextFields).forEach(field => {
 
         gatheredInputs.push(makeKeystrokeEvent(timestampMillis, e, equalSoFar));
 
-        // TODO: horribly inefficient, prefer a data-* attribute approach
-        inputTextarea.classList.remove("inprogress");
-        inputTextarea.classList.remove("error");
-        inputTextarea.classList.remove("completed");
-
         if (equalSoFar) {
-            inputTextarea.classList.add("inprogress");
+            inputTextarea.setAttribute("data-input-state", "progress");
         } else {
-            inputTextarea.classList.add("error");
+            inputTextarea.setAttribute("data-input-state", "error");
         }
 
         if (equality) {
             console.log("[Keystrokes] Field has been completed, moving on...");
             inputTextarea.setAttribute("disabled", "");
-            inputTextarea.classList.remove("inprogress");
-            inputTextarea.classList.remove("error");
-            inputTextarea.classList.remove("completed");
-            inputTextarea.classList.add("completed")
+            inputTextarea.setAttribute("data-input-state", "completed");
             field.removeEventListener("keyup", listener);
 
             sendEventsToServer(gatheredInputs, "keystroke");

@@ -9,22 +9,22 @@
   background: none;
 }
 
-.inprogress.input.user-study-textarea,
-.inprogress.input.user-study-textarea:focus,
-.inprogress.input.user-study-textarea:disabled {
+.input.user-study-textarea[data-input-state=progress],
+.input.user-study-textarea:focus[data-input-state=progress],
+.input.user-study-textarea:disabled[data-input-state=progress] {
   color: black;
   background: none;
 }
 
-.completed.input.user-study-textarea,
-.completed.input.user-study-textarea:focus,
-.completed.input.user-study-textarea:disabled {
+.input.user-study-textarea[data-input-state=completed],
+.input.user-study-textarea:focus[data-input-state=completed],
+.input.user-study-textarea:disabled[data-input-state=completed] {
   color: green;
 }
 
-.error.input.user-study-textarea,
-.error.input.user-study-textarea:focus,
-.error.input.user-study-textarea:disabled {
+.input.user-study-textarea[data-input-state=error],
+.input.user-study-textarea:focus[data-input-state=error],
+.input.user-study-textarea:disabled[data-input-state=error] {
   color: red;
   background: none;
 }
