@@ -38,26 +38,23 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
 
         // clear out renderables
         // TODO: investigate whether or not this needs to be synchronized with a mutex
-        // if unsynced i would imagine it leads to frame tearing (not a huge deal here),
-        // but we may run into issues when reading strings
-        renderables.leapDebugString = "";
-        renderables.hands.clear();
-        renderables.averageFingerDirectionX = 0.0f;
-        renderables.averageFingerDirectionY = 0.0f;
-        renderables.cursorDirectionX = 0.0f;
-        renderables.cursorDirectionY = 0.0f;
+        // if unsynced i would imagine it leads to frame tearing (not a huge deal here)
+        renderables.hand = LEAP_HAND{};
+        renderables.didClick = false;
+        renderables.avgFingerDirX = 0.0f;
+        renderables.avgFingerDirY = 0.0f;
+        renderables.cursorDirX = 0.0f;
+        renderables.cursorDirY = 0.0f;
 
         LEAP_TRACKING_EVENT* leapFrame = connection.GetFrame();
         if (!leapFrame)
             continue;
 
         std::optional<Leap::ProcessedHandState> currentState = std::nullopt;
-        bool isLeft = true;
 
         for (int i = 0; i < leapFrame->nHands; i++)
         {
             LEAP_HAND hand = leapFrame->pHands[i];
-            renderables.hands.push_back(hand);
 
             Leap::UnprocessedHandState inState{};
             inState.isTracking = true;
@@ -75,28 +72,20 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
             }
 
             Leap::ProcessedHandState outState = Leap::ProcessHandState(inState);
-            currentState = outState;
-            isLeft = inState.isLeft;
+            currentState = outState;  // yes, we only want the most recent hand
+
+            renderables.hand = hand;
         }
 
         if (currentState)
         {
-            renderables.cursorDirectionX = currentState->cursorDirectionX;
-            renderables.cursorDirectionY = currentState->cursorDirectionY;
-            renderables.averageFingerDirectionX = currentState->averageFingerDirectionX;
-            renderables.averageFingerDirectionY = currentState->averageFingerDirectionY;
+            renderables.didClick = currentState->isInClickPose;
+            renderables.cursorDirX = currentState->cursorDirectionX;
+            renderables.cursorDirY = currentState->cursorDirectionY;
+            renderables.avgFingerDirX = currentState->averageFingerDirectionX;
+            renderables.avgFingerDirY = currentState->averageFingerDirectionY;
 
-            std::stringstream ss;
-            ss << (isLeft ? "Left" : "Right") << " Hand:\n"
-               << "    Cursor direction: (" << currentState->cursorDirectionX << ", "
-               << currentState->cursorDirectionY << "); "
-               << "    Clicked?: " << currentState->isInClickPose << "\n\n";
-            renderables.leapDebugString = ss.str();
-        }
-
-        // do the input finally
-        if (currentState)
-        {
+            // do the input finally
             // click pose and movement pose are mutually exclusive
             // poses in neither state are encoded as a relative mouse movement of (0, 0)
             if (isClickDisengaged && currentState->isInClickPose)

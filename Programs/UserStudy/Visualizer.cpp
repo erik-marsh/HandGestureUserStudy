@@ -5,6 +5,7 @@
 
 #include <Visualization/RaylibVisuals.hpp>
 #include <iostream>
+#include <sstream>
 
 namespace Visualization
 {
@@ -32,6 +33,12 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
     constexpr int rectHeight = 200;
     constexpr int vectorLength = 100;
 
+    constexpr int rectX = rectCenterX - (rectWidth / 2);
+    constexpr int rectY = rectCenterY - (rectHeight / 2);
+
+    std::stringstream ss;
+    ss << std::boolalpha;
+
     while (isRunning.load())
     {
         UpdateCamera(camera3D);
@@ -41,32 +48,34 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
 
         BeginMode3D(camera3D);
         DrawCartesianBasis();
-        for (int i = 0; i < renderables.hands.size(); i++)
-            DrawHand(renderables.hands[i]);
+        DrawHand(renderables.hand);
         EndMode3D();
 
         BeginMode2D(camera2D);
-        const int cursorDirectionVecX =
-            static_cast<int>(renderables.cursorDirectionX * vectorLength);
+        const int cursorDirX = static_cast<int>(renderables.cursorDirX * vectorLength);
         // multiply by -1 because Y is down in screen space
-        const int cursorDirectionVecY =
-            static_cast<int>(-1.0f * renderables.cursorDirectionY * vectorLength);
+        const int cursorDirY = static_cast<int>(-1.0f * renderables.cursorDirY * vectorLength);
 
-        const int fingerDirectionVecX =
-            static_cast<int>(renderables.averageFingerDirectionX * vectorLength * 0.5f);
-        const int fingerDirectionVecY =
-            static_cast<int>(-1.0f * renderables.averageFingerDirectionY * vectorLength * 0.5f);
+        const int fingerDirX = static_cast<int>(renderables.avgFingerDirX * vectorLength * 0.5f);
+        const int fingerDirY =
+            static_cast<int>(-1.0f * renderables.avgFingerDirY * vectorLength * 0.5f);
 
-        DrawRectangle(rectCenterX - (rectWidth / 2), rectCenterY - (rectHeight / 2),
-                      rectCenterX + (rectWidth / 2), rectCenterY + (rectHeight / 2), DARKGRAY);
+        DrawRectangle(rectX, rectY, rectWidth, rectHeight, DARKGRAY);
 
-        DrawLine(rectCenterX, rectCenterY, rectCenterX + cursorDirectionVecX,
-                 rectCenterY + cursorDirectionVecY, YELLOW);
-        DrawLine(rectCenterX, rectCenterY, rectCenterX + fingerDirectionVecX,
-                 rectCenterY + fingerDirectionVecY, PURPLE);
+        DrawLine(rectCenterX, rectCenterY, rectCenterX + cursorDirX, rectCenterY + cursorDirY,
+                 YELLOW);
+        DrawLine(rectCenterX, rectCenterY, rectCenterX + fingerDirX, rectCenterY + fingerDirY,
+                 PURPLE);
         EndMode2D();
 
-        DrawText(renderables.leapDebugString.c_str(), 10, 10, 10, BLACK);
+        const bool isLeft = renderables.hand.type == eLeapHandType_Left;
+        ss.str("");  // clear stream
+        ss << (isLeft ? "Left" : "Right") << " Hand:\n"
+           << "    Cursor direction: (" << renderables.cursorDirX << ", " << renderables.cursorDirY
+           << "); "
+           << "    Clicked?: " << renderables.didClick << "\n\n";
+
+        DrawText(ss.str().c_str(), 10, 10, 10, BLACK);
         EndDrawing();
     }
 

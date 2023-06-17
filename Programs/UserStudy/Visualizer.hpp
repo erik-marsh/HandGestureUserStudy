@@ -1,23 +1,24 @@
 #pragma once
 
+#include <LeapC.h>
+
 #include <atomic>
 #include <string>
 #include <vector>
-#include <LeapC.h>
 
 namespace Visualization
 {
 
 struct Renderables
 {
-    std::string leapDebugString;
-    std::vector<LEAP_HAND> hands;
-    float averageFingerDirectionX;
-    float averageFingerDirectionY;
-    float cursorDirectionX;
-    float cursorDirectionY;
+    LEAP_HAND hand;
+    bool didClick;
+    float avgFingerDirX;
+    float avgFingerDirY;
+    float cursorDirX;
+    float cursorDirY;
 };
 
 void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning);
 
-}
+}  // namespace Visualization
