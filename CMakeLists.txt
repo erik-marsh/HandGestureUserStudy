@@ -128,6 +128,7 @@ target_compile_features(${TEST_HTTP_SERVER} PRIVATE cxx_std_20)
 add_executable(
     ${TEST_THREADING}
     Helpers/UserIDLock.cpp
+    HTML/HTMLTemplate.cpp
     Input/LeapConnection.cpp
     Input/LeapMotionGestureProvider.cpp
     Input/SimulatedMouse.cpp
@@ -139,7 +140,7 @@ add_executable(
     Programs/UserStudy/Visualizer.cpp
     Visualization/RaylibVisuals.cpp)
 
-add_dependencies(${TEST_THREADING} libLeapC staticFiles)
+add_dependencies(${TEST_THREADING} libLeapC staticFiles htmlTemplates)
 
 target_include_directories(
     ${TEST_THREADING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAYLIB}

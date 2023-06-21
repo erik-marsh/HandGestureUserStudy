@@ -6,6 +6,7 @@
 #include <rapidjson/rapidjson.h>
 #include <rapidjson/schema.h>
 
+#include <HTML/HTMLTemplate.hpp>
 #include <Helpers/Expected.hpp>
 #include <Helpers/IsAnyOf.hpp>
 #include <iostream>
@@ -138,10 +139,33 @@ struct StudyState
     int currentDeviceIndex;
 };
 
+Expected<int, ParseError> ParseInt(const std::string& value, int min, int max)
+{
+    // TODO: constexpr initialization doesn't work lol
+    static const Expected<int, ParseError> err(ParseError::None);  // TODO: better error
+
+    try
+    {
+        int val = std::stoi(value);
+        if (val < min || val > max)
+            return err;
+
+        return Expected<int, ParseError>(std::move(val));  // TODO: ugly
+    }
+    catch (const std::exception& ex)
+    {
+        return err;
+    }
+}
+
 void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
 {
     std::cout << "Starting HTTP thread..." << std::endl;
+
     httplib::Server server;
+    StudyState state{};
+    HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
+    HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
 
     if (!server.set_mount_point("/", "./www/"))
     {
@@ -149,8 +173,6 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         isRunning.store(false);
         return;
     }
-
-    StudyState state{};
 
     auto quitHandler = [&server, &isRunning](const Req& req, Res& res)
     {
@@ -182,6 +204,63 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         parseErrorHandler(req, res, result.Error());
     };
     server.Post("/start", startHandler);
+
+    auto formHandler = [&state, &formTemplate, &emailTemplate](const Req& req, Res& res)
+    {
+        int currDevice = -1;
+        int currTask = -1;
+        for (auto it = req.params.begin(); it != req.params.end(); ++it)
+        {
+            if (it->first == "currDevice")
+            {
+                auto result = ParseInt(it->second, 0, COUNTERBALANCING_SEQUENCE[0].size() - 1);
+                if (!result.HasValue())
+                {
+                    res.status = 400;
+                    return;
+                }
+                currDevice = result.Value();
+            }
+
+            if (it->first == "currTask")
+            {
+                auto result = ParseInt(it->second, 0, TASK_SEQUENCE.size() - 1);
+                if (!result.HasValue())
+                {
+                    res.status = 400;
+                    return;
+                }
+                currTask = result.Value();
+            }
+        }
+
+        if (currDevice == -1 || currTask == -1)
+        {
+            res.status = 400;
+            return;
+        }
+
+        std::cout << "success, got device=" << currDevice << " and task=" << currTask << std::endl;
+        switch (TASK_SEQUENCE[currTask])
+        {
+            case Task::Form:
+                formTemplate.Substitute({"Jeremiah the Bullfrog", "jbf@gmail.com",
+                                         "123 Swamp Apt. 227", "4/16/1954", "12345678",
+                                         "123-45-678"});
+                res.set_content(formTemplate.GetSubstitution(), "text/html");
+                break;
+            case Task::Email:
+                emailTemplate.Substitute(
+                    {"jbf@gmail.com", "hey dude what's up it's me, [REDACTED]"});
+                res.set_content(emailTemplate.GetSubstitution(), "text/html");
+                break;
+            default:
+                std::cout << "Something went horribly wrong" << std::endl;
+                res.status = 500;
+                break;
+        }
+    };
+    server.Get("/form", formHandler);
 
     // logging only
     auto eventsClickHandler = [](const Req& req, Res& res)

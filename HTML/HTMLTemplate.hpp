@@ -11,7 +11,7 @@ class HTMLTemplate
    public:
     HTMLTemplate(const std::string& filename, const std::string& marker = "{% expected_text %}");
 
-    void Substitute(std::vector<std::string>& strs);
+    void Substitute(const std::vector<std::string>& strs);
     std::string GetSubstitution() const;
     std::string GetTemplate() const;
 

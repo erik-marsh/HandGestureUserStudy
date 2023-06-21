@@ -35,7 +35,7 @@ HTMLTemplate::HTMLTemplate(const std::string& filename, const std::string& marke
     numSubstitutions = chunks.size() - 1;
 }
 
-void HTMLTemplate::Substitute(std::vector<std::string>& strs)
+void HTMLTemplate::Substitute(const std::vector<std::string>& strs)
 {
     substitutions.clear();
     for (auto it = strs.begin(); it != strs.end(); ++it)
