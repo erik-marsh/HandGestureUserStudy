@@ -11,6 +11,7 @@ set(TEST_VIRTUAL_MOUSE virtualMouse)
 set(TEST_HTTP_SERVER httpServer)
 set(TEST_THREADING threadingTest)
 set(TEST_LOGGING loggingTest)
+set(TEST_TEMPLATING templatingTest)
 
 # include directories
 set(INCLUDE_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/)
@@ -33,7 +34,7 @@ add_custom_command(
     BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/LeapC.dll)
 
 # =======================================================
-# =============== Static file server fles ===============
+# ================= Static file copying =================
 # =======================================================
 add_custom_target(staticFiles)
 add_custom_command(
@@ -41,7 +42,15 @@ add_custom_command(
     POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/www
             ${CMAKE_BINARY_DIR}/$<CONFIG>/www
-    BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/www/
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/www)
+
+add_custom_target(htmlTemplates)
+add_custom_command(
+    TARGET htmlTemplates
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/HTMLTemplates
+            ${CMAKE_BINARY_DIR}/$<CONFIG>/HTMLTemplates
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/HTMLTemplates
 )
 
 # ==================================================
@@ -118,6 +127,7 @@ target_compile_features(${TEST_HTTP_SERVER} PRIVATE cxx_std_20)
 
 add_executable(
     ${TEST_THREADING}
+    Helpers/UserIDLock.cpp
     Input/LeapConnection.cpp
     Input/LeapMotionGestureProvider.cpp
     Input/SimulatedMouse.cpp
@@ -127,8 +137,7 @@ add_executable(
     Programs/UserStudy/LeapDriver.cpp
     Programs/UserStudy/ThreadingTest.cpp
     Programs/UserStudy/Visualizer.cpp
-    Visualization/RaylibVisuals.cpp
-    Helpers/UserIDLock.cpp)
+    Visualization/RaylibVisuals.cpp)
 
 add_dependencies(${TEST_THREADING} libLeapC staticFiles)
 
@@ -147,3 +156,13 @@ target_link_libraries(${TEST_THREADING} PRIVATE raylib LeapSDK::LeapC)
 add_executable(${TEST_LOGGING} Programs/Testing/LoggerTest.cpp Programs/UserStudy/Logging.cpp)
 
 target_compile_features(${TEST_LOGGING} PRIVATE cxx_std_20)
+
+# ============================================================
+# ============ HTML templating test configuration ============
+# ============================================================
+
+add_executable(${TEST_TEMPLATING} HTML/HTMLTemplate.cpp
+                                  Programs/Testing/TemplatingTest.cpp)
+add_dependencies(${TEST_TEMPLATING} staticFiles htmlTemplates)
+target_include_directories(${TEST_TEMPLATING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB})
+target_compile_features(${TEST_TEMPLATING} PRIVATE cxx_std_20)
