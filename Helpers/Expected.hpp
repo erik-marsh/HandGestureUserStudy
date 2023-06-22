@@ -1,4 +1,7 @@
+#pragma once
+
 #include <type_traits>
+#include <stdexcept>
 
 /// @brief Home-grown implementation of C++23's std::expected.
 ///        Nowhere near compliant to the C++23 standard, just something usable for this project.

@@ -128,6 +128,7 @@ target_compile_features(${TEST_HTTP_SERVER} PRIVATE cxx_std_20)
 add_executable(
     ${TEST_THREADING}
     Helpers/UserIDLock.cpp
+    Helpers/JSONEvents.cpp
     HTML/HTMLTemplate.cpp
     Input/LeapConnection.cpp
     Input/LeapMotionGestureProvider.cpp
