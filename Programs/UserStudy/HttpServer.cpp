@@ -10,6 +10,7 @@
 #include <Helpers/Expected.hpp>
 #include <Helpers/IsAnyOf.hpp>
 #include <iostream>
+#include <queue>
 #include <sstream>
 #include <string>
 
@@ -139,6 +140,56 @@ struct StudyState
     int currentDeviceIndex;
 };
 
+// TODO: needs a queue
+class EventDispatcher
+{
+   public:
+    void WaitEvent(httplib::DataSink& sink)
+    {
+        std::unique_lock<std::mutex> lock(queueMutex);
+        cv.wait(lock,
+                [this]
+                {
+                    std::cout << "checking condition... (queueSize=" << queueSize << ")"
+                              << std::endl;
+                    return queueSize > 0 || programTerminated;
+                });  // TODO: still probably a race condition i didn't account for
+        // lock is reacquired...
+        if (programTerminated)
+            return;
+
+        std::string message = messageQueue.front();
+        sink.write(message.c_str(), message.length());
+        messageQueue.pop();
+        queueSize = messageQueue.size();
+        // lock is released
+    }
+
+    void SendEvent(const std::string& newMessage)
+    {
+        if (programTerminated)
+            return;
+
+        std::lock_guard<std::mutex> lock(queueMutex);
+        messageQueue.push(newMessage);
+        queueSize = messageQueue.size();
+        cv.notify_all();
+    }
+
+    void ShutDown()
+    {
+        programTerminated = true;
+        cv.notify_all();
+    }
+
+   private:
+    std::mutex queueMutex;
+    std::condition_variable cv;
+    std::queue<std::string> messageQueue;
+    std::atomic<int> queueSize{0};
+    std::atomic<bool> programTerminated{false};
+};
+
 Expected<int, ParseError> ParseInt(const std::string& value, int min, int max)
 {
     // TODO: constexpr initialization doesn't work lol
@@ -158,6 +209,17 @@ Expected<int, ParseError> ParseInt(const std::string& value, int min, int max)
     }
 }
 
+void HeartbeatLoop(std::atomic<bool>& isRunning, EventDispatcher& dispatcher,
+                   const int intervalSeconds)
+{
+    std::cout << "Starting SSE heartbeat thread..." << std::endl;
+    while (isRunning)
+    {
+        dispatcher.SendEvent("event: keep-alive\ndata: null\n\n");
+        std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
+    }
+}
+
 void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
 {
     std::cout << "Starting HTTP thread..." << std::endl;
@@ -174,9 +236,35 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         return;
     }
 
-    auto quitHandler = [&server, &isRunning](const Req& req, Res& res)
+    EventDispatcher dispatcher;
+    auto r_isRunning = std::ref(isRunning);
+    auto r_dispatcher = std::ref(dispatcher);
+    std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 10);
+
+    server.Post("/eventPusherTester",
+                [&dispatcher](const Req& req, Res& res)
+                {
+                    std::cout << "sending event..." << std::endl;
+                    dispatcher.SendEvent("event: proceed\ndata: test from eventPusherTester\n\n");
+                });
+
+    server.Get("/eventPusher",
+               [&dispatcher](const Req& req, Res& res)
+               {
+                   std::cout << "Got request for eventPusher" << std::endl;
+                   res.set_chunked_content_provider(
+                       "text/event-stream",
+                       [&dispatcher](size_t offset, httplib::DataSink& sink)
+                       {
+                           dispatcher.WaitEvent(sink);
+                           return true;
+                       });
+               });
+
+    auto quitHandler = [&server, &isRunning, &dispatcher](const Req& req, Res& res)
     {
         std::cout << "Server got shutdown signal, shutting down threads..." << std::endl;
+        dispatcher.ShutDown();
         server.stop();
         isRunning.store(false);
     };
@@ -346,6 +434,8 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     server.Post("/events/task", eventsTaskHandler);
 
     server.listen("localhost", 5000);
+    std::cout << "server.listen exited" << std::endl;
+    heartbeatThread.join();  // TODO: note that the sleep_for is still running
 
     std::cout << "Shutting down HTTP thread..." << std::endl;
 }
