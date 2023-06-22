@@ -83,13 +83,8 @@ class EventDispatcher
     void WaitEvent(httplib::DataSink& sink)
     {
         std::unique_lock<std::mutex> lock(queueMutex);
-        cv.wait(lock,
-                [this]
-                {
-                    std::cout << "checking condition... (queueSize=" << queueSize << ")"
-                              << std::endl;
-                    return queueSize > 0 || programTerminated;
-                });  // TODO: still probably a race condition i didn't account for
+        cv.wait(lock, [this] { return queueSize > 0 || programTerminated; });
+        // TODO: there's still probably a race condition i didn't account for
         // lock is reacquired...
         if (programTerminated)
             return;
@@ -129,7 +124,8 @@ class EventDispatcher
 Expected<int, Helpers::ParseError> ParseInt(const std::string& value, int min, int max)
 {
     // TODO: constexpr initialization doesn't work lol
-    static const Expected<int, Helpers::ParseError> err(Helpers::ParseError::None);  // TODO: better error
+    static const Expected<int, Helpers::ParseError> err(
+        Helpers::ParseError::None);  // TODO: better error
 
     try
     {
@@ -145,6 +141,10 @@ Expected<int, Helpers::ParseError> ParseInt(const std::string& value, int min, i
     }
 }
 
+std::mutex heartbeatMutex;
+std::condition_variable heartbeatCV;
+std::atomic<bool> killHeartbeat{false};
+
 void HeartbeatLoop(std::atomic<bool>& isRunning, EventDispatcher& dispatcher,
                    const int intervalSeconds)
 {
@@ -152,7 +152,10 @@ void HeartbeatLoop(std::atomic<bool>& isRunning, EventDispatcher& dispatcher,
     while (isRunning)
     {
         dispatcher.SendEvent("event: keep-alive\ndata: null\n\n");
-        std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
+        // std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
+        std::unique_lock<std::mutex> lock(heartbeatMutex);
+        heartbeatCV.wait_for(lock, std::chrono::seconds(intervalSeconds),
+                             [] { return killHeartbeat.load(); });
     }
 }
 
@@ -201,6 +204,11 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     {
         std::cout << "Server got shutdown signal, shutting down threads..." << std::endl;
         dispatcher.ShutDown();
+        {
+            std::lock_guard<std::mutex> lock(heartbeatMutex);
+            killHeartbeat = true;
+            heartbeatCV.notify_all();
+        }
         server.stop();
         isRunning.store(false);
     };
