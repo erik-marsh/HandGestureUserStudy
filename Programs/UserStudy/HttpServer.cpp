@@ -70,6 +70,8 @@ constexpr std::array<std::array<InputDevice, 2>, 2> COUNTERBALANCING_SEQUENCE = 
 
 struct StudyState
 {
+    bool isInTutorial;
+    bool isStudyStarted;
     bool isStudyDone;
     int userId;
     int counterbalancingIndex;
@@ -165,6 +167,8 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
 
     httplib::Server server;
     StudyState state{};
+    HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
+    HTML::HTMLTemplate endTemplate("HTMLTemplates/endPage.html");
     HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
     HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
 
@@ -214,11 +218,18 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     };
     server.Post("/quit", quitHandler);
 
-    auto startHandler = [&state, &isLeapDriverActive](const Req& req, Res& res)
+    auto startHandler = [&state, &isLeapDriverActive, &dispatcher](const Req& req, Res& res)
     {
+        if (state.isStudyStarted)
+        {
+            res.status = 400;
+            return;
+        }
+
         auto result = Helpers::ParseRequest<Helpers::Start>(req.body);
         if (result.HasValue())
         {
+            state.isStudyStarted = true;
             state.userId = result.Value().userId;
             state.counterbalancingIndex = state.userId % 2;
 
@@ -230,6 +241,9 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             std::cout << "Starting user study for user id " << state.userId
                       << " (counterbalancing index=" << state.counterbalancingIndex << ")"
                       << std::endl;
+
+            dispatcher.SendEvent("event: proceed\ndata: starting user study\n\n");
+
             res.status = 200;  // 200 OK
             return;
         }
@@ -237,43 +251,58 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     };
     server.Post("/start", startHandler);
 
-    auto formHandler = [&state, &formTemplate, &emailTemplate](const Req& req, Res& res)
+    auto formHandler = [&state, &formTemplate, &emailTemplate, &startTemplate, &endTemplate](
+                           const Req& req, Res& res)
     {
-        int currDevice = -1;
-        int currTask = -1;
-        for (auto it = req.params.begin(); it != req.params.end(); ++it)
+        if (!state.isStudyStarted)
         {
-            if (it->first == "currDevice")
-            {
-                auto result = ParseInt(it->second, 0, COUNTERBALANCING_SEQUENCE[0].size() - 1);
-                if (!result.HasValue())
-                {
-                    res.status = 400;
-                    return;
-                }
-                currDevice = result.Value();
-            }
-
-            if (it->first == "currTask")
-            {
-                auto result = ParseInt(it->second, 0, TASK_SEQUENCE.size() - 1);
-                if (!result.HasValue())
-                {
-                    res.status = 400;
-                    return;
-                }
-                currTask = result.Value();
-            }
-        }
-
-        if (currDevice == -1 || currTask == -1)
-        {
-            res.status = 400;
+            res.set_content(startTemplate.GetSubstitution(), "text/html");
             return;
         }
 
-        std::cout << "success, got device=" << currDevice << " and task=" << currTask << std::endl;
-        switch (TASK_SEQUENCE[currTask])
+        if (state.isStudyDone)
+        {
+            res.set_content(endTemplate.GetSubstitution(), "text/html");
+            return;
+        }
+
+        // int currDevice = -1;
+        // int currTask = -1;
+        // for (auto it = req.params.begin(); it != req.params.end(); ++it)
+        // {
+        //     if (it->first == "currDevice")
+        //     {
+        //         auto result = ParseInt(it->second, 0, COUNTERBALANCING_SEQUENCE[0].size() - 1);
+        //         if (!result.HasValue())
+        //         {
+        //             res.status = 400;
+        //             return;
+        //         }
+        //         currDevice = result.Value();
+        //     }
+
+        //     if (it->first == "currTask")
+        //     {
+        //         auto result = ParseInt(it->second, 0, TASK_SEQUENCE.size() - 1);
+        //         if (!result.HasValue())
+        //         {
+        //             res.status = 400;
+        //             return;
+        //         }
+        //         currTask = result.Value();
+        //     }
+        // }
+
+        // if (currDevice == -1 || currTask == -1)
+        // {
+        //     res.status = 400;
+        //     return;
+        // }
+
+        // std::cout << "success, got device=" << currDevice << " and task=" << currTask <<
+        // std::endl;
+
+        switch (TASK_SEQUENCE[state.currentTaskIndex])
         {
             case Task::Form:
                 formTemplate.Substitute({"Jeremiah the Bullfrog", "jbf@gmail.com",
@@ -337,8 +366,14 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     server.Post("/events/field", eventsFieldHandler);
 
     // we actually need to do state updates here
-    auto eventsTaskHandler = [&state, &isLeapDriverActive](const Req& req, Res& res)
+    auto eventsTaskHandler = [&state, &isLeapDriverActive, &dispatcher](const Req& req, Res& res)
     {
+        if (state.isStudyDone)
+        {
+            res.status = 400;
+            return;
+        }
+
         auto result = Helpers::ParseRequest<Helpers::EventTaskCompletion>(req.body);
         if (result.HasValue())
         {
@@ -353,12 +388,17 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                 COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex].size())
             {
                 state.isStudyDone = true;
+                res.status = 200;
+                return;
             }
 
             // TODO: need to test this to make sure the device (de)activation works
             auto deviceSequence = COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex];
-            auto activeDevice = deviceSequence[0];
+            auto activeDevice = deviceSequence[state.currentDeviceIndex];
             isLeapDriverActive.store(activeDevice == InputDevice::LeapMotion);
+            std::cout << "LEAP MOTION ACTIVE?: " << isLeapDriverActive << std::endl;
+
+            dispatcher.SendEvent("event: proceed\ndata: moving on to next study phase\n\n");
 
             std::stringstream ss;
             ss << "Study state:"

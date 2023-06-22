@@ -1,21 +1,7 @@
 "use strict";
 
 // TODO: need to PREVENT input when the user clicks the wrong field
-
-const eventSourceEndpoint = "/eventPusher";
-const eventSource = new EventSource(eventSourceEndpoint);
-eventSource.onmessage = e => {
-    console.log("[SSE] Received unknown message from " + eventSourceEndpoint + ". Details...");
-    console.log(e);
-};
-
-eventSource.addEventListener("keep-alive", e => {
-    console.log("[SSE] Received keep-alive (heartbeat) message.");
-});
-
-eventSource.addEventListener("proceed", e => {
-    console.log("[SSE] Received proceed message.");
-});
+// TODO: need to PREVENT tab navigation
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -158,7 +144,7 @@ Array.from(userStudyFields).forEach(field => {
     field.addEventListener("click", e => {
         const timestampMillis = Date.now();
         const wasCorrect = fieldIndex === state.currentField;
-        
+
         let clickLocation = "";
         if (field.classList.contains("user-study-field-text"))
             clickLocation = "TextField";
@@ -166,15 +152,15 @@ Array.from(userStudyFields).forEach(field => {
             clickLocation = "Button";
         else
             clickLocation = "OutOfBounds";
-        
+
         const newClick = {
             timestampMillis: timestampMillis,
             location: clickLocation,
             wasCorrect: wasCorrect
         };
-        clickEvents.push(newClick);        
+        clickEvents.push(newClick);
         console.log("[Clicks] Click successful on fieldIndex=" + fieldIndex);
-        
+
         e.stopPropagation();
     });
 });
