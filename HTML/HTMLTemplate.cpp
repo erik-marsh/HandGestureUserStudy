@@ -21,16 +21,24 @@ HTMLTemplate::HTMLTemplate(const std::string& filename, const std::string& marke
         {
             chunk.append(line);
             chunk.append("\n");  // since std::getline eats the newline
+            continue;
         }
-        else
+
+        size_t lastOrigin = 0;
+        do
         {
-            chunk.append(line, 0, markerLoc);
+            chunk.append(line, lastOrigin, markerLoc - lastOrigin);
             chunks.push_back(chunk);
             chunk = "";
-            chunk.append(line, markerLoc + marker.size(), line.size());
-            chunk.append("\n");
-        }
+
+            lastOrigin = markerLoc + marker.size();
+            markerLoc = line.find(marker, lastOrigin);
+        } while (markerLoc != std::string::npos);
+
+        chunk.append(line, lastOrigin, line.size() - lastOrigin);
+        chunk.append("\n");  // since std::getline eats the newline
     }
+
     chunks.push_back(chunk);
     numSubstitutions = chunks.size() - 1;
 }

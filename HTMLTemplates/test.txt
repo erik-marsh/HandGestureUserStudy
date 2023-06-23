@@ -4,3 +4,5 @@ hello line {% expected_text %} end of line
 {% expected_text %} end of line
 hello line {% expected_text %}
 hello line end of line
+hello line {% expected_text %} middle of line {% expected_text %} end of line
+hello line end of line

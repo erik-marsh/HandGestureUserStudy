@@ -7,6 +7,7 @@
 
 #include <HTML/HTMLTemplate.hpp>
 #include <Helpers/JSONEvents.hpp>
+#include <exception>
 #include <iostream>
 #include <queue>
 #include <sstream>
@@ -302,17 +303,34 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         // std::cout << "success, got device=" << currDevice << " and task=" << currTask <<
         // std::endl;
 
+        std::string device;
+        switch (COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex][state.currentDeviceIndex])
+        {
+            case InputDevice::Mouse:
+                device = "Mouse";
+                break;
+            case InputDevice::LeapMotion:
+                device = "Leap Motion";
+                break;
+            default:
+                device = "<UNKNOWN>";
+                break;
+        }
+
         switch (TASK_SEQUENCE[state.currentTaskIndex])
         {
             case Task::Form:
-                formTemplate.Substitute({"Jeremiah the Bullfrog", "jbf@gmail.com",
-                                         "123 Swamp Apt. 227", "4/16/1954", "12345678",
-                                         "123-45-678"});
+                formTemplate.Substitute(
+                    {std::to_string(state.currentTaskIndex + 1),
+                     std::to_string(TASK_SEQUENCE.size()), device, "Jeremiah the Bullfrog",
+                     "jbf@gmail.com", "123 Swamp Apt. 227", "4/16/1954", "12345678", "123-45-678"});
                 res.set_content(formTemplate.GetSubstitution(), "text/html");
                 break;
             case Task::Email:
-                emailTemplate.Substitute(
-                    {"jbf@gmail.com", "hey dude what's up it's me, [REDACTED]"});
+                emailTemplate.Substitute({std::to_string(state.currentTaskIndex + 1),
+                                          std::to_string(TASK_SEQUENCE.size()), device,
+                                          "jbf@gmail.com",
+                                          "hey dude what's up it's me, [REDACTED]"});
                 res.set_content(emailTemplate.GetSubstitution(), "text/html");
                 break;
             default:
@@ -416,6 +434,36 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         parseErrorHandler(req, res, result.Error());
     };
     server.Post("/events/task", eventsTaskHandler);
+
+    server.set_error_handler(
+        [](const Req& req, Res& res)
+        {
+            std::stringstream ss;
+            ss << "<h1>Error " << res.status << "/<h1>";
+            res.set_content(ss.str(), "text/html");
+        });
+
+    server.set_exception_handler(
+        [](const Req& req, Res& res, std::exception_ptr exp)
+        {
+            std::stringstream ss;
+            ss << "<h1>Error 500</h1><p>";
+            try
+            {
+                std::rethrow_exception(exp);
+            }
+            catch (std::exception& ex)
+            {
+                ss << ex.what();
+            }
+            catch (...)
+            {
+                ss << "Unknown exception (not of type std::exception) was thrown.";
+            }
+            ss << "</p>";
+
+            res.set_content(ss.str(), "text/html");
+        });
 
     server.listen("localhost", 5000);
     std::cout << "server.listen exited" << std::endl;

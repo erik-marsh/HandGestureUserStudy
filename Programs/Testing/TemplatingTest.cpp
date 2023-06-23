@@ -11,18 +11,19 @@ int main()
               << " ===== TEMPLATE =====\n"
               << test.GetTemplate() << std::endl;
 
+    TestWith(test, {"AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG"});
     TestWith(test, {"AAA", "BBB", "CCC", "DDD", "EEE"});
-    TestWith(test, {"AAA", "BBB", "CCC"});
+    TestWith(test, {"AAA", "BBB"});
     TestWith(test, {});
-    TestWith(test, {"AAA", "BBB", "CCC", "DDD"});
+    TestWith(test, {"AAA", "BBB", "CCC", "DDD", "EEE", "FFF"});
 
     HTML::HTMLTemplate test2("HTMLTemplates/formTemplate.html");
     std::cout << "Testing on large file...\n"
               << " ===== TEMPLATE =====\n"
               << test2.GetTemplate() << std::endl;
     TestWith(test2, {"bleck"});
-    TestWith(test2, {"Jeremiah the Bullfrog", "jbf@gmail.com", "123 Swamp Apt. 227", "4/16/1954",
-                     "12345678", "123-45-678"});
+    TestWith(test2, {"1", "2", "Leap Motion", "Jeremiah the Bullfrog", "jbf@gmail.com",
+                     "123 Swamp Apt. 227", "4/16/1954", "12345678", "123-45-678"});
 
     return 0;
 }
