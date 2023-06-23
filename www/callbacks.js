@@ -1,7 +1,6 @@
 "use strict";
 
 // TODO: need to PREVENT input when the user clicks the wrong field
-// TODO: need to PREVENT tab navigation
 
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
