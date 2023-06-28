@@ -65,6 +65,19 @@ const __stateHandler = {
                     taskIndex: -1,  // TODO: idk how i want to retrieve this value tbh
                 }, "task");
             }
+
+            // then enable the next field
+            const field = userStudyFields[value];
+            console.log(field);
+            if (Array.from(userStudyTextFields).includes(field)) {
+                const inputSubfield = field.getElementsByClassName("input")[0];
+                inputSubfield.removeAttribute("disabled");
+                inputSubfield.setAttribute("data-input-state", "progress");
+            }
+            else if (Array.from(userStudyButtons).includes(field)) {
+                const buttonSubfield = field.getElementsByTagName("button")[0];
+                buttonSubfield.removeAttribute("disabled");
+            }
         }
 
         return Reflect.set(...arguments);
@@ -79,12 +92,17 @@ let state = new Proxy(__state, __stateHandler);
 ///////////////////////////////////////////////////////////////////////////////
 
 Array.from(userStudyTextFields).forEach(field => {
-    const fieldIndex = field.getAttribute("data-field-index");
+    const fieldIndex = parseInt(field.getAttribute("data-field-index"));
     const inputTextarea = field.getElementsByClassName("input")[0];
     const expectedTextarea = field.getElementsByClassName("expected")[0];
     // the way the text field is set up in HTML may yield
     // leading and trailing whitespace, so we trim those out.
     const expectedString = expectedTextarea.value.trim();
+
+    if (fieldIndex === 0) {
+        inputTextarea.removeAttribute("disabled");
+        inputTextarea.setAttribute("data-input-state", "progress");
+    }
 
     const makeKeystrokeEvent = (timestampMillis, keyupEvent, wasCorrect) => ({
         timestampMillis: timestampMillis,
@@ -125,6 +143,9 @@ Array.from(userStudyTextFields).forEach(field => {
 // Click listeners
 ///////////////////////////////////////////////////////////////////////////////
 
+// TODO: click on buttons miss when the button is disabled a priori to their activation
+// otherwise everything seems to be in order
+
 // missed clicks will not be caught by the other handler and will bubble up to here
 document.addEventListener("click", e => {
     const timestampMillis = Date.now();
@@ -158,7 +179,7 @@ Array.from(userStudyFields).forEach(field => {
             wasCorrect: wasCorrect
         };
         clickEvents.push(newClick);
-        console.log("[Clicks] Click successful on fieldIndex=" + fieldIndex);
+        console.log("[Clicks] Click successful on fieldIndex=" + fieldIndex + " [" + (wasCorrect ? "correct field" : "incorrect field") + "]");
 
         e.stopPropagation();
     });

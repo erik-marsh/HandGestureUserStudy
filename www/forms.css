@@ -14,6 +14,12 @@
          this is kinda necessary for the button case anyway
 */
 
+.input.user-study-textarea[data-input-state=future],
+.input.user-study-textarea:focus[data-input-state=future],
+.input.user-study-textarea:disabled[data-input-state=future] {
+  color: black;
+}
+
 .input.user-study-textarea[data-input-state=progress],
 .input.user-study-textarea:focus[data-input-state=progress],
 .input.user-study-textarea:disabled[data-input-state=progress] {
