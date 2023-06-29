@@ -7,6 +7,7 @@
 
 #include <HTML/HTMLTemplate.hpp>
 #include <Helpers/JSONEvents.hpp>
+#include <Helpers/StringPools.hpp>
 #include <exception>
 #include <iostream>
 #include <queue>
@@ -317,20 +318,27 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                 break;
         }
 
+        std::vector<std::string> strings;
+        strings.push_back(std::to_string(state.currentTaskIndex + 1));
+        strings.push_back(std::to_string(TASK_SEQUENCE.size()));
+        strings.push_back(device);
+        using namespace Helpers::StringPools;
         switch (TASK_SEQUENCE[state.currentTaskIndex])
         {
             case Task::Form:
-                formTemplate.Substitute(
-                    {std::to_string(state.currentTaskIndex + 1),
-                     std::to_string(TASK_SEQUENCE.size()), device, "Jeremiah the Bullfrog",
-                     "jbf@gmail.com", "123 Swamp Apt. 227", "4/16/1954", "12345678", "123-45-678"});
+                strings.push_back(SelectRandom(Names));
+                strings.push_back(SelectRandom(EmailAddresses));
+                strings.push_back(SelectRandom(PhysicalAddresses));
+                strings.push_back(SelectRandom(DateOfBirth));
+                strings.push_back(SelectRandom(IdNumbers));
+                strings.push_back(SelectRandom(CardNumbers));
+                formTemplate.Substitute(strings);
                 res.set_content(formTemplate.GetSubstitution(), "text/html");
                 break;
             case Task::Email:
-                emailTemplate.Substitute({std::to_string(state.currentTaskIndex + 1),
-                                          std::to_string(TASK_SEQUENCE.size()), device,
-                                          "jbf@gmail.com",
-                                          "hey dude what's up it's me, [REDACTED]"});
+                strings.push_back(SelectRandom(EmailAddresses));
+                strings.push_back(SelectRandom(EmailBodyText));
+                emailTemplate.Substitute(strings);
                 res.set_content(emailTemplate.GetSubstitution(), "text/html");
                 break;
             default:
