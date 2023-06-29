@@ -1,3 +1,7 @@
+/* 
+ * this fixes an issue with the textareas with absolute positioning
+ * getting moved to the side when using bootstrap
+ */
 .nopad {
   padding: 0
 }

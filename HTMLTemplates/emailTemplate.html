@@ -12,37 +12,51 @@
 
 <body>
   <!-- TODO: nicer colors -->
-  <nav class="navbar navbar-light bg-info">
+  <header class="navbar navbar-light bg-info">
     <div class="navbar-text">
       Current task: {% expected_text %} of {% expected_text %}
     </div>
     <div class="navbar-text">
       Current mouse control scheme: {% expected_text %}
     </div>
-  </nav>
+  </header>
+  <div class="container-fluid">
+    <main class="m-3">
+      <div class="">
 
-  <div class="user-study-field-text-label">
-    To:
-  </div>
-  <div class="user-study-field user-study-field-text nopad" data-field-index="0">
-    <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1" disabled></textarea>
-    <textarea class="form-control user-study-textarea expected" rows="1" disabled>
+        <div class="user-study-field-text-label">
+          To:
+        </div>
+        <div class="row">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="0">
+            <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+              disabled></textarea>
+            <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 {% expected_text %}
-    </textarea>
-  </div>
+            </textarea>
+          </div>
+        </div>
 
-  <div class="user-study-field-text-label">
-    Email body:
-  </div>
-  <div class="user-study-field user-study-field-text nopad" data-field-index="1">
-    <textarea class="form-control user-study-textarea input" data-input-state="future" rows="10" disabled></textarea>
-    <textarea class="form-control user-study-textarea expected" rows="10" disabled>
+        <div class="user-study-field-text-label">
+          Email body:
+        </div>
+        <div class="row">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="1">
+            <textarea class="form-control user-study-textarea input" data-input-state="future" rows="10"
+              disabled></textarea>
+            <textarea class="form-control user-study-textarea expected" rows="10" disabled>
 {% expected_text %}
-    </textarea>
-  </div>
+            </textarea>
+          </div>
+        </div>
 
-  <div class="user-study-field user-study-field-button" data-field-index="2">
-    <button class="form-control" disabled>Send</button>
+        <div class="row">
+        <div class="col user-study-field user-study-field-button nopad" data-field-index="2">
+          <button class="form-control" disabled>Send</button>
+        </div>
+        </div>
+      </div>
+    </main>
   </div>
 </body>
 
