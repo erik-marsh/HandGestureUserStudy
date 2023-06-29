@@ -1,3 +1,7 @@
+.nopad {
+  padding: 0
+}
+
 .user-study-textarea {
   overflow: hidden;
   resize: none;
@@ -37,7 +41,7 @@
 .input.user-study-textarea:focus[data-input-state=error],
 .input.user-study-textarea:disabled[data-input-state=error] {
   color: red;
-  background: none;
+  /* background: none; */
 }
 
 .input {
