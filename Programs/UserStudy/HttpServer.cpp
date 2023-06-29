@@ -183,7 +183,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     EventDispatcher dispatcher;
     auto r_isRunning = std::ref(isRunning);
     auto r_dispatcher = std::ref(dispatcher);
-    std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 10);
+    //std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 10);
 
     server.Post("/eventPusherTester",
                 [&dispatcher](const Req& req, Res& res)
@@ -407,6 +407,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             {
                 state.isStudyDone = true;
                 res.status = 200;
+                dispatcher.SendEvent("event: proceed\ndata: study is done\n\n");
                 return;
             }
 
@@ -467,7 +468,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
 
     server.listen("localhost", 5000);
     std::cout << "server.listen exited" << std::endl;
-    heartbeatThread.join();  // TODO: note that the sleep_for is still running
+    //heartbeatThread.join();  // TODO: note that the sleep_for is still running
 
     std::cout << "Shutting down HTTP thread..." << std::endl;
 }
