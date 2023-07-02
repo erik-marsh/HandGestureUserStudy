@@ -12,22 +12,24 @@
 
 <body>
   <!-- TODO: nicer colors -->
-  <header class="navbar navbar-light bg-info">
-    <div class="navbar-text">
-      Current task: {% expected_text %} of {% expected_text %}
-    </div>
-    <div class="navbar-text">
-      Current mouse control scheme: {% expected_text %}
-    </div>
-  </header>
-  <div class="container-fluid">
-    <main class="m-3">
-      <div class="">
+  <div class="container-fluid bg-light p-0" style="height: 100vh;">
 
-        <div class="user-study-field-text-label">
+    <header class="navbar navbar-light bg-info">
+      <div class="navbar-text">
+        Current mouse control scheme: {% expected_text %}
+      </div>
+      <div class="navbar-text">
+        Current task: {% expected_text %} of {% expected_text %}
+      </div>
+    </header>
+
+    <main class="container-fluid m-3">
+      <div class="col-8">
+
+        <div class="row mb-1 user-study-field-text-label">
           To:
         </div>
-        <div class="row">
+        <div class="row mb-3">
           <div class="col user-study-field user-study-field-text nopad" data-field-index="0">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
@@ -37,10 +39,10 @@
           </div>
         </div>
 
-        <div class="user-study-field-text-label">
+        <div class="row mb-1 user-study-field-text-label">
           Email body:
         </div>
-        <div class="row">
+        <div class="row mb-3">
           <div class="col user-study-field user-study-field-text nopad" data-field-index="1">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="10"
               disabled></textarea>
@@ -50,12 +52,14 @@
           </div>
         </div>
 
-        <div class="row">
-        <div class="col user-study-field user-study-field-button nopad" data-field-index="2">
-          <button class="form-control" disabled>Send</button>
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-button nopad" data-field-index="2">
+            <button class="form-control" disabled>Send</button>
+          </div>
         </div>
-        </div>
+
       </div>
+      <div class="col"></div>
     </main>
   </div>
 </body>

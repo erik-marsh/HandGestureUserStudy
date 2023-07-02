@@ -319,9 +319,9 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         }
 
         std::vector<std::string> strings;
+        strings.push_back(device);
         strings.push_back(std::to_string(state.currentTaskIndex + 1));
         strings.push_back(std::to_string(TASK_SEQUENCE.size()));
-        strings.push_back(device);
         using namespace Helpers::StringPools;
         switch (TASK_SEQUENCE[state.currentTaskIndex])
         {

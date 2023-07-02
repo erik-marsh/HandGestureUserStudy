@@ -12,108 +12,106 @@
 
 <body>
   <!-- TODO: nicer colors -->
-  <header class="navbar navbar-light bg-info">
-    <div class="navbar-text">
-      Current task: {% expected_text %} of {% expected_text %}
-    </div>
-    <div class="navbar-text">
-      Current mouse control scheme: {% expected_text %}
-    </div>
-  </header>
-  <div class="container-fluid">
-    <main class="m-3">
-      <div class="">
-        <div class="user-study-field-text-label">
+  <div class="container-fluid bg-light p-0" style="height: 100vh;">
+
+    <header class="navbar navbar-light bg-info">
+      <div class="navbar-text">
+        Current mouse control scheme: {% expected_text %}
+      </div>
+      <div class="navbar-text">
+        Current task: {% expected_text %} of {% expected_text %}
+      </div>
+    </header>
+
+    <main class="container-fluid m-3">
+      <div class="col-4">
+
+        <div class="row mb-1 user-study-field-text-label">
           Name
         </div>
-        <div class="row">
-          <div class="col-4 user-study-field user-study-field-text nopad" data-field-index="0">
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="0">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 {% expected_text %}
             </textarea>
           </div>
-          <div class="col"></div>
         </div>
 
-        <div class="user-study-field-text-label">
+        <div class="row mb-1 user-study-field-text-label">
           Email Address
         </div>
-        <div class="row">
-          <div class="col-4 user-study-field user-study-field-text nopad" data-field-index="1">
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="1">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 {% expected_text %}
             </textarea>
           </div>
-          <div class="col"></div>
         </div>
 
-        <div class="user-study-field-text-label">
+        <div class="row mb-1 user-study-field-text-label">
           Physical Address
         </div>
-        <div class="row">
-          <div class="col-4 user-study-field user-study-field-text nopad" data-field-index="2">
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="2">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 {% expected_text %}
             </textarea>
           </div>
-          <div class="col"></div>
         </div>
 
-        <div class="user-study-field-text-label">
+        <div class="row mb-1 user-study-field-text-label">
           Date of Birth
         </div>
-        <div class="row">
-          <div class="col-4 user-study-field user-study-field-text nopad" data-field-index="3">
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="3">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 {% expected_text %}
             </textarea>
           </div>
-          <div class="col"></div>
         </div>
 
-        <div class="user-study-field-text-label">
+        <div class="row mb-1 user-study-field-text-label">
           ID Number
         </div>
-        <div class="row">
-          <div class="col-4 user-study-field user-study-field-text nopad" data-field-index="4">
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="4">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 {% expected_text %}
             </textarea>
           </div>
-          <div class="col"></div>
         </div>
 
-        <div class="user-study-field-text-label">
+        <div class="row mb-1 user-study-field-text-label">
           Card Number
         </div>
-        <div class="row">
-          <div class="col-4 user-study-field user-study-field-text nopad" data-field-index="5">
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-text nopad" data-field-index="5">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 {% expected_text %}
             </textarea>
           </div>
-          <div class="col"></div>
         </div>
 
-        <div class="row">
-          <div class="col-4 user-study-field user-study-field-button nopad" data-field-index="6">
+        <div class="row mb-3">
+          <div class="col user-study-field user-study-field-button nopad" data-field-index="6">
             <button class="form-control" disabled>Next</button>
           </div>
-          <div class="col"></div>
         </div>
+
       </div>
+      <div class="col"></div>
     </main>
   </div>
 </body>
