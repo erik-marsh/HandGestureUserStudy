@@ -8,6 +8,7 @@
 #include <HTML/HTMLTemplate.hpp>
 #include <Helpers/JSONEvents.hpp>
 #include <Helpers/StringPools.hpp>
+#include <Helpers/UserIDLock.hpp>
 #include <exception>
 #include <iostream>
 #include <queue>
@@ -188,14 +189,15 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     EventDispatcher dispatcher;
     auto r_isRunning = std::ref(isRunning);
     auto r_dispatcher = std::ref(dispatcher);
-    //std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 10);
+    // std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 10);
 
-    server.Post("/eventPusherTester",
-                [&dispatcher](const Req& req, Res& res)
-                {
-                    std::cout << "sending event..." << std::endl;
-                    dispatcher.SendEvent("event: proceed\ndata: test from eventPusherTester\r\n\r\n");
-                });
+    server.Post(
+        "/eventPusherTester",
+        [&dispatcher](const Req& req, Res& res)
+        {
+            std::cout << "sending event..." << std::endl;
+            dispatcher.SendEvent("event: proceed\ndata: test from eventPusherTester\r\n\r\n");
+        });
 
     server.Get("/eventPusher",
                [&dispatcher](const Req& req, Res& res)
@@ -224,7 +226,10 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     };
     server.Post("/quit", quitHandler);
 
-    auto startHandler = [&state, &isLeapDriverActive, &dispatcher](const Req& req, Res& res)
+    Helpers::UserIDLock userIdLock("ids.lock");
+
+    auto startHandler =
+        [&state, &isLeapDriverActive, &dispatcher, &userIdLock](const Req& req, Res& res)
     {
         if (state.isStudyStarted)
         {
@@ -235,8 +240,17 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         auto result = Helpers::ParseRequest<Helpers::Start>(req.body);
         if (result.HasValue())
         {
+            // check if the user ID has been used already
+            if (userIdLock.IsLocked(result.Value().userId))
+            {
+                std::cout << "User ID " << result.Value().userId << " is already in use.";
+                res.status = 403;
+                return;
+            }
+
             state.isStudyStarted = true;
             state.userId = result.Value().userId;
+            userIdLock.Lock(state.userId);
             state.counterbalancingIndex = state.userId % 2;
 
             // TODO: need to test this to make sure the device (de)activation works
@@ -480,7 +494,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
 
     server.listen("localhost", 5000);
     std::cout << "server.listen exited" << std::endl;
-    //heartbeatThread.join();  // TODO: note that the sleep_for is still running
+    // heartbeatThread.join();  // TODO: note that the sleep_for is still running
 
     std::cout << "Shutting down HTTP thread..." << std::endl;
 }
