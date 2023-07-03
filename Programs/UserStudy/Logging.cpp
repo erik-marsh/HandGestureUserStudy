@@ -5,6 +5,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <cassert>
 
 namespace Logging
 {
@@ -23,8 +24,10 @@ std::string ClickLocationToString(Events::ClickLocation loc);
 ///////////////////////////////////////////////////////////////////////////////
 // Implementations of class methods
 ///////////////////////////////////////////////////////////////////////////////
+Logger::Logger() : hasFilename(false), currBuffer(0), currIndex(0), isFileInitialized(false) {}
+
 Logger::Logger(std::string filename)
-    : logFilename(filename), currBuffer(0), currIndex(0), isFileInitialized(false)
+    : logFilename(filename), hasFilename(true), currBuffer(0), currIndex(0), isFileInitialized(false)
 {
 }
 
@@ -38,9 +41,16 @@ Logger::~Logger()
     std::cout << "Closing log file " << logFilename << " and writing it to disk." << std::endl;
 }
 
+void Logger::OpenLogFile(const std::string& filename)
+{
+    logFilename = filename;
+    hasFilename = true;
+}
+
 template <Loggable T>
 void Logger::Log(T event)
 {
+    assert(hasFilename);
     std::string logLine = SerializeEvent(event);
 
     // the buffer should not be full at this point
@@ -59,7 +69,7 @@ void Logger::Log(T event)
         std::ofstream outFile(logFilename, openMode);
         for (auto it = buffer.begin(); it != buffer.end(); ++it)
             outFile << *it << "\n";
-        
+
         if (!isFileInitialized)
             isFileInitialized = true;
     }

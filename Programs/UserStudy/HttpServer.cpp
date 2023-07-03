@@ -14,6 +14,7 @@
 #include <queue>
 #include <sstream>
 #include <string>
+#include <filesystem>
 
 #include "Logging.hpp"
 
@@ -76,6 +77,7 @@ struct StudyState
     bool isInTutorial;
     bool isStudyStarted;
     bool isStudyDone;
+    Logging::Logger logger;
     int userId;
     int counterbalancingIndex;
     int currentTaskIndex;
@@ -179,6 +181,9 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
     HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
 
+    if (!std::filesystem::exists("Logs"))
+        std::filesystem::create_directory("Logs");
+
     if (!server.set_mount_point("/", "./www/"))
     {
         std::cout << "Unable to set mount point" << std::endl;
@@ -252,6 +257,8 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             state.userId = result.Value().userId;
             userIdLock.Lock(state.userId);
             state.counterbalancingIndex = state.userId % 2;
+            // make dirs ugh
+            //state.logger.OpenLogFile("Logs/<userId>");
 
             // TODO: need to test this to make sure the device (de)activation works
             auto deviceSequence = COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex];

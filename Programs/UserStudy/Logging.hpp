@@ -74,14 +74,18 @@ concept Loggable = IsAnyOf<T, Events::Click, Events::CursorPosition, Events::Key
 class Logger
 {
    public:
+    Logger();
     Logger(std::string filename);
     ~Logger();
+
+    void OpenLogFile(const std::string& filename);
 
     template <Loggable T>
     void Log(T event);
 
    private:
-    const std::string logFilename;
+    std::string logFilename;
+    bool hasFilename;
 
     std::array<std::array<std::string, 1000>, 2> logDoubleBuffer;
     int currBuffer;
