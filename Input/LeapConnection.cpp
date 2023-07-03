@@ -7,7 +7,8 @@ namespace Input::Leap
 {
 void DebugPrint(const std::string& message)
 {
-    if constexpr (ENABLE_DEBUG_PRINT) std::cout << message << "\n";
+    if constexpr (ENABLE_DEBUG_PRINT)
+        std::cout << message << "\n";
 }
 
 std::string GetEnumString(eLeapRS res)
@@ -302,7 +303,8 @@ void LeapConnection::OnLogMessage(const LEAP_LOG_EVENT* log_event)
 
 void LeapConnection::OnLogMessages(const LEAP_LOG_EVENTS* log_events)
 {
-    for (int i = 0; i < log_events->nEvents; i++) OnLogMessage(&log_events->events[i]);
+    for (int i = 0; i < log_events->nEvents; i++)
+        OnLogMessage(&log_events->events[i]);
 }
 
 void LeapConnection::OnConfigChange(const LEAP_CONFIG_CHANGE_EVENT* config_change_event)
