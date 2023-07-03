@@ -8,11 +8,8 @@ eventSource.onmessage = e => {
     console.log(e);
 };
 
-eventSource.addEventListener("keep-alive", e => {
-    console.log("[SSE] Received keep-alive (heartbeat) message.");
-});
-
 eventSource.addEventListener("proceed", e => {
     console.log("[SSE] Received proceed message.");
+    console.log(e);
     setTimeout(() => { location.reload(); }, 500);
 });

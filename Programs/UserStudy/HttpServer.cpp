@@ -106,8 +106,11 @@ class EventDispatcher
             return;
 
         std::lock_guard<std::mutex> lock(queueMutex);
-        messageQueue.push(newMessage);
+        std::stringstream ss;
+        ss << "id: " << eventId.load() << "\n" << newMessage;
+        messageQueue.push(ss.str());
         queueSize = messageQueue.size();
+        eventId++;
         cv.notify_all();
     }
 
@@ -121,6 +124,7 @@ class EventDispatcher
     std::mutex queueMutex;
     std::condition_variable cv;
     std::queue<std::string> messageQueue;
+    std::atomic<int> eventId{0};
     std::atomic<int> queueSize{0};
     std::atomic<bool> programTerminated{false};
 };
@@ -155,7 +159,7 @@ void HeartbeatLoop(std::atomic<bool>& isRunning, EventDispatcher& dispatcher,
     std::cout << "Starting SSE heartbeat thread..." << std::endl;
     while (isRunning)
     {
-        dispatcher.SendEvent("event: keep-alive\ndata: null\n\n");
+        dispatcher.SendEvent("event: keep-alive\ndata: null\r\n\r\n");
         // std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
         std::unique_lock<std::mutex> lock(heartbeatMutex);
         heartbeatCV.wait_for(lock, std::chrono::seconds(intervalSeconds),
@@ -190,7 +194,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                 [&dispatcher](const Req& req, Res& res)
                 {
                     std::cout << "sending event..." << std::endl;
-                    dispatcher.SendEvent("event: proceed\ndata: test from eventPusherTester\n\n");
+                    dispatcher.SendEvent("event: proceed\ndata: test from eventPusherTester\r\n\r\n");
                 });
 
     server.Get("/eventPusher",
@@ -244,7 +248,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                       << " (counterbalancing index=" << state.counterbalancingIndex << ")"
                       << std::endl;
 
-            dispatcher.SendEvent("event: proceed\ndata: starting user study\n\n");
+            dispatcher.SendEvent("event: proceed\ndata: starting user study\r\n\r\n");
 
             res.status = 200;  // 200 OK
             return;
@@ -415,7 +419,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             {
                 state.isStudyDone = true;
                 res.status = 200;
-                dispatcher.SendEvent("event: proceed\ndata: study is done\n\n");
+                dispatcher.SendEvent("event: proceed\ndata: study is done\r\n\r\n");
                 return;
             }
 
@@ -425,7 +429,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             isLeapDriverActive.store(activeDevice == InputDevice::LeapMotion);
             std::cout << "LEAP MOTION ACTIVE?: " << isLeapDriverActive << std::endl;
 
-            dispatcher.SendEvent("event: proceed\ndata: moving on to next study phase\n\n");
+            dispatcher.SendEvent("event: proceed\ndata: moving on to next study phase\r\n\r\n");
 
             std::stringstream ss;
             ss << "Study state:"
