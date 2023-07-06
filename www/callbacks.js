@@ -28,6 +28,7 @@ const sendEventsToServer = (eventObject, eventType) => {
 const userStudyFields = document.getElementsByClassName("user-study-field");
 const userStudyTextFields = document.getElementsByClassName("user-study-field-text");
 const userStudyButtons = document.getElementsByClassName("user-study-field-button");
+const loadingField = document.getElementById("loading");
 
 // load the number of fields, used for tracking progress
 const totalFields = Array.from(userStudyFields).length;
@@ -64,6 +65,14 @@ const __stateHandler = {
                     timestampMillis: completionTime,
                     taskIndex: -1,  // TODO: idk how i want to retrieve this value tbh
                 }, "task");
+
+                loadingField.innerHTML =
+                    `<div class="col-2 justify-content-center">
+                        <div class="spinner-border"></div>
+                    </div>
+                    <div class="col">
+                        <p>If the next task has not yet loaded, please refresh the page by pressing F5.</p>
+                    </div>`;
             }
 
             // then enable the next field
