@@ -12,6 +12,7 @@ set(TEST_HTTP_SERVER httpServer)
 set(TEST_THREADING threadingTest)
 set(TEST_LOGGING loggingTest)
 set(TEST_TEMPLATING templatingTest)
+set(TEST_SSE sseReliabilityTest)
 
 # include directories
 set(INCLUDE_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/)
@@ -139,6 +140,7 @@ add_executable(
     Programs/UserStudy/LeapDriver.cpp
     Programs/UserStudy/ThreadingTest.cpp
     Programs/UserStudy/Visualizer.cpp
+    Programs/UserStudy/Logging.cpp
     Visualization/RaylibVisuals.cpp)
 
 add_dependencies(${TEST_THREADING} libLeapC staticFiles htmlTemplates)
@@ -168,3 +170,12 @@ add_executable(${TEST_TEMPLATING} HTML/HTMLTemplate.cpp
 add_dependencies(${TEST_TEMPLATING} staticFiles htmlTemplates)
 target_include_directories(${TEST_TEMPLATING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB})
 target_compile_features(${TEST_TEMPLATING} PRIVATE cxx_std_20)
+
+# ============================================================
+# ============ SSE reliability test configuration ============
+# ============================================================
+
+add_executable(${TEST_SSE} Programs/Testing/SSEReliabilityTest.cpp)
+add_dependencies(${TEST_SSE} staticFiles)
+target_include_directories(${TEST_SSE} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB})
+target_compile_features(${TEST_SSE} PRIVATE cxx_std_20)
