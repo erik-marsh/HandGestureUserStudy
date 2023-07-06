@@ -2,7 +2,7 @@ const userIdField = document.getElementById("form-user-id");
 const submitButton = document.getElementById("form-submit");
 const errorDiv = document.getElementById("error-message-container");
 
-submitButton.addEventListener("click", async e => {
+const inputHandler = async e => {
     const input = userIdField.value;
     if (input === "") return;
 
@@ -22,4 +22,11 @@ submitButton.addEventListener("click", async e => {
     }
 
     console.log("An unknown error occured.");
+};
+
+submitButton.addEventListener("click", inputHandler);
+userIdField.addEventListener("keyup", e => {
+    if (e.key == "Enter") {
+        inputHandler(null);
+    }
 });
