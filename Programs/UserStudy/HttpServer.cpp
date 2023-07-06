@@ -162,13 +162,15 @@ void HeartbeatLoop(std::atomic<bool>& isRunning, EventDispatcher& dispatcher,
     std::cout << "Starting SSE heartbeat thread..." << std::endl;
     while (isRunning)
     {
-        dispatcher.SendEvent("event: keep-alive\ndata: null\r\n\r\n");
+        dispatcher.SendEvent("data: keep alive\r\n\r\n");
         // std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
         std::unique_lock<std::mutex> lock(heartbeatMutex);
         heartbeatCV.wait_for(lock, std::chrono::seconds(intervalSeconds),
                              [] { return killHeartbeat.load(); });
     }
 }
+
+const std::string baseDir = "Logs";
 
 void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
 {
@@ -181,8 +183,8 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
     HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
 
-    if (!std::filesystem::exists("Logs"))
-        std::filesystem::create_directory("Logs");
+    if (!std::filesystem::exists(baseDir))
+        std::filesystem::create_directory(baseDir);
 
     if (!server.set_mount_point("/", "./www/"))
     {
@@ -194,7 +196,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     EventDispatcher dispatcher;
     auto r_isRunning = std::ref(isRunning);
     auto r_dispatcher = std::ref(dispatcher);
-    // std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 10);
+    std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 3);
 
     server.Post(
         "/eventPusherTester",
@@ -254,11 +256,14 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             }
 
             state.isStudyStarted = true;
-            state.userId = result.Value().userId;
-            userIdLock.Lock(state.userId);
             state.counterbalancingIndex = state.userId % 2;
-            // make dirs ugh
-            //state.logger.OpenLogFile("Logs/<userId>");
+            state.userId = result.Value().userId;
+
+            userIdLock.Lock(state.userId);
+            std::stringstream fsss;
+            fsss << baseDir << "/user" << state.userId << ".log";
+            std::string logFilename = fsss.str();
+            state.logger.OpenLogFile(logFilename);
 
             // TODO: need to test this to make sure the device (de)activation works
             auto deviceSequence = COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex];
@@ -375,11 +380,13 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     server.Get("/form", formHandler);
 
     // logging only
-    auto eventsClickHandler = [](const Req& req, Res& res)
+    auto eventsClickHandler = [&state](const Req& req, Res& res)
     {
         auto result = Helpers::ParseRequest<Helpers::EventClick>(req.body);
         if (result.HasValue())
         {
+            for (auto event : result.Value().data)
+                state.logger.Log(event);
             printRequest(req, res);
             res.status = 200;
             return;
@@ -389,11 +396,13 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     server.Post("/events/click", eventsClickHandler);
 
     // logging only
-    auto eventsKeystrokeHandler = [](const Req& req, Res& res)
+    auto eventsKeystrokeHandler = [&state](const Req& req, Res& res)
     {
         auto result = Helpers::ParseRequest<Helpers::EventKeystroke>(req.body);
         if (result.HasValue())
         {
+            for (auto event : result.Value().data)
+                state.logger.Log(event);
             printRequest(req, res);
             res.status = 200;
             return;
@@ -403,11 +412,12 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     server.Post("/events/keystroke", eventsKeystrokeHandler);
 
     // logging only, relevant state is client-side only
-    auto eventsFieldHandler = [](const Req& req, Res& res)
+    auto eventsFieldHandler = [&state](const Req& req, Res& res)
     {
         auto result = Helpers::ParseRequest<Helpers::EventFieldCompletion>(req.body);
         if (result.HasValue())
         {
+            state.logger.Log(result.Value().data);
             printRequest(req, res);
             res.status = 200;
             return;
@@ -428,6 +438,8 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         auto result = Helpers::ParseRequest<Helpers::EventTaskCompletion>(req.body);
         if (result.HasValue())
         {
+            state.logger.Log(result.Value().data);
+
             state.currentTaskIndex++;
             if (state.currentTaskIndex == TASK_SEQUENCE.size())
             {
