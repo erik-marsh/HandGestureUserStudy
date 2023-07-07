@@ -10,11 +10,11 @@
 #include <Helpers/StringPools.hpp>
 #include <Helpers/UserIDLock.hpp>
 #include <exception>
+#include <filesystem>
 #include <iostream>
 #include <queue>
 #include <sstream>
 #include <string>
-#include <filesystem>
 
 #include "Logging.hpp"
 
@@ -74,8 +74,8 @@ constexpr std::array<std::array<InputDevice, 2>, 2> COUNTERBALANCING_SEQUENCE = 
 
 struct StudyState
 {
-    bool isInTutorial;
     bool isStudyStarted;
+    bool isTutorialDone;
     bool isStudyDone;
     Logging::Logger logger;
     int userId;
@@ -179,6 +179,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     httplib::Server server;
     StudyState state{};
     HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
+    HTML::HTMLTemplate tutorialTemplate("HTMLTemplates/tutorialPage.html");
     HTML::HTMLTemplate endTemplate("HTMLTemplates/endPage.html");
     HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
     HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
@@ -274,7 +275,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                       << " (counterbalancing index=" << state.counterbalancingIndex << ")"
                       << std::endl;
 
-            dispatcher.SendEvent("event: proceed\ndata: starting user study\r\n\r\n");
+            dispatcher.SendEvent("event: proceed\ndata: starting tutorial\r\n\r\n");
 
             res.status = 200;  // 200 OK
             return;
@@ -283,12 +284,33 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     };
     server.Post("/start", startHandler);
 
-    auto formHandler = [&state, &formTemplate, &emailTemplate, &startTemplate, &endTemplate](
-                           const Req& req, Res& res)
+    auto tutorialProgressHandler = [&state, &dispatcher](const Req& req, Res& res)
+    {
+        if (!state.isStudyStarted || state.isTutorialDone)
+        {
+            res.status = 400;
+            return;
+        }
+
+        state.isTutorialDone = true;
+        res.status = 200;
+
+        dispatcher.SendEvent("event: proceed\r\ndata: starting user study\r\n\r\n");
+    };
+    server.Post("/acknowledgeTutorial", tutorialProgressHandler);
+
+    auto formHandler = [&state, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
+                        &endTemplate](const Req& req, Res& res)
     {
         if (!state.isStudyStarted)
         {
             res.set_content(startTemplate.GetSubstitution(), "text/html");
+            return;
+        }
+
+        if (!state.isTutorialDone)
+        {
+            res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
             return;
         }
 
@@ -297,42 +319,6 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             res.set_content(endTemplate.GetSubstitution(), "text/html");
             return;
         }
-
-        // int currDevice = -1;
-        // int currTask = -1;
-        // for (auto it = req.params.begin(); it != req.params.end(); ++it)
-        // {
-        //     if (it->first == "currDevice")
-        //     {
-        //         auto result = ParseInt(it->second, 0, COUNTERBALANCING_SEQUENCE[0].size() - 1);
-        //         if (!result.HasValue())
-        //         {
-        //             res.status = 400;
-        //             return;
-        //         }
-        //         currDevice = result.Value();
-        //     }
-
-        //     if (it->first == "currTask")
-        //     {
-        //         auto result = ParseInt(it->second, 0, TASK_SEQUENCE.size() - 1);
-        //         if (!result.HasValue())
-        //         {
-        //             res.status = 400;
-        //             return;
-        //         }
-        //         currTask = result.Value();
-        //     }
-        // }
-
-        // if (currDevice == -1 || currTask == -1)
-        // {
-        //     res.status = 400;
-        //     return;
-        // }
-
-        // std::cout << "success, got device=" << currDevice << " and task=" << currTask <<
-        // std::endl;
 
         std::string device;
         switch (COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex][state.currentDeviceIndex])

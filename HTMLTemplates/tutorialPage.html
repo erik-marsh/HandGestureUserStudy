@@ -6,6 +6,8 @@
   <link rel="stylesheet" href="forms.css">
   <script src="disableTabNavigation.js"></script> <!-- deliberately non-deferred -->
   <script src="callbacks_tutorial.js" defer></script>
+  <script src="tutorial.js" defer></script>
+  <script src="sse.js" defer></script>
 </head>
 
 <body>
@@ -14,7 +16,7 @@
       <div class="col"></div>
       <div class="col-6 my-3">
         <h1>Tutorial</h1>
-        <h2>Summary of the user study</h2>
+        <h2>What will you be doing today?</h2>
         <p>
           In this study, we aim to investigate the differences between using
           a conventional computer mouse and an optical hand-tracking device to move a cursor around the screen.
@@ -32,7 +34,7 @@
           <li>You will repeat those tasks with the input device you have not yet used.</li>
         </ul>
         </p>
-        <h2>Explanation of text entry</h2>
+        <h2>Entering text</h2>
         <p>
           You will be expected to enter text in certain fields.
           When the field is ready, you will see light gray "placeholder text" within the field.
@@ -56,11 +58,11 @@
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
 You need to input this entire string verbatim.
       </textarea>
-            <button class="form-control" disabled>Reset</button>
+            <button class="btn btn-secondary mt-3 w-100" disabled>Reset</button>
           </div>
           <div class="col"></div>
         </div>
-        <h2>Explanation of cursor movement</h2>
+        <h2>Moving the cursor</h2>
         <p>
           During the user study, you will see a bar at the top of the page (see Fig. 1) that
           indicates which task you are currently working on, and the input device that is currently active.
@@ -77,10 +79,10 @@ You need to input this entire string verbatim.
             <div>
               <header class="navbar navbar-light bg-info">
                 <div class="navbar-text mx-3">
-                  Current task: 1 of 2
+                  Current mouse control scheme: Leap Motion
                 </div>
                 <div class="navbar-text mx-3">
-                  Current mouse control scheme: Leap Motion
+                  Current task: 1 of 2
                 </div>
               </header>
             </div>
@@ -124,6 +126,12 @@ You need to input this entire string verbatim.
           The individual that is running the user study is available if you need help with the gesture input system.
           Once you are comfortable with the gesture input system, you may begin the user study.
         </p>
+        <div class="mb-3 d-flex justify-content-center">
+          <button id="proceed" class="w-auto btn btn-primary">I understand, let's start!</button>
+        </div>
+        <div id="loading" class="row mx-0">
+
+        </div>
       </div>
       <div class="col"></div>
     </main>
