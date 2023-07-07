@@ -1,7 +1,5 @@
 "use strict";
 
-// TODO: need to PREVENT input when the user clicks the wrong field
-
 ///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 ///////////////////////////////////////////////////////////////////////////////
@@ -35,7 +33,7 @@ const loadingField = document.getElementById("loading");
 const resizeListener = (userStudyTextField) => {
     const inputTextarea = userStudyTextField.getElementsByClassName("input")[0];
     const expectedTextarea = userStudyTextField.getElementsByClassName("expected")[0];
-    inputTextarea.setAttribute("style", `position: absolute; z-index: 10; width: ${expectedTextarea.offsetWidth}px`);
+    inputTextarea.setAttribute("style", `width: ${expectedTextarea.offsetWidth}px`);
 };
 
 const resizeHandler = () => {

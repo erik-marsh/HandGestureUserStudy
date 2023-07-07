@@ -49,7 +49,7 @@
 }
 
 .input {
-  /* z-index: 10;
-  position: absolute; */
+  z-index: 10;
+  position: absolute;
   width: auto;  /* this prevents putting a gutter in the right margin of the page, maybe */
 }
