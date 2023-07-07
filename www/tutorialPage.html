@@ -2,17 +2,17 @@
 <html lang="en">
 
 <head>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css"
-    integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
   <link rel="stylesheet" href="forms.css">
   <script src="disableTabNavigation.js"></script> <!-- deliberately non-deferred -->
   <script src="callbacks_tutorial.js" defer></script>
 </head>
 
 <body>
-  <div class="container-fluid">
-    <main class="m-3">
-      <div class="">
+  <div class="container-fluid bg-light p-0">
+    <main class="row">
+      <div class="col"></div>
+      <div class="col-6 my-3">
         <h1>Tutorial</h1>
         <h2>Summary of the user study</h2>
         <p>
@@ -50,7 +50,7 @@
         </p>
         <div class="row my-3">
           <div class="col"></div>
-          <div class="col-6 nopad user-study-field user-study-field-text" data-field-index="0">
+          <div class="col-10 nopad user-study-field user-study-field-text" data-field-index="0">
             <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
               disabled></textarea>
             <textarea class="form-control user-study-textarea expected" rows="1" disabled>
@@ -73,13 +73,13 @@ You need to input this entire string verbatim.
         </p>
         <div class="row my-3">
           <div class="col"></div>
-          <div class="col-8">
+          <div class="col-10">
             <div>
               <header class="navbar navbar-light bg-info">
-                <div class="navbar-text">
+                <div class="navbar-text mx-3">
                   Current task: 1 of 2
                 </div>
-                <div class="navbar-text">
+                <div class="navbar-text mx-3">
                   Current mouse control scheme: Leap Motion
                 </div>
               </header>
@@ -125,6 +125,7 @@ You need to input this entire string verbatim.
           Once you are comfortable with the gesture input system, you may begin the user study.
         </p>
       </div>
+      <div class="col"></div>
     </main>
   </div>
 </body>

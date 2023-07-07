@@ -30,6 +30,20 @@ const userStudyTextFields = document.getElementsByClassName("user-study-field-te
 const userStudyButtons = document.getElementsByClassName("user-study-field-button");
 const loadingField = document.getElementById("loading");
 
+// Bootstrap 5 broke the CSS that lined up the input and expectd textareas,
+// so we manually set the input field's size in JS now
+const resizeListener = (userStudyTextField) => {
+    const inputTextarea = userStudyTextField.getElementsByClassName("input")[0];
+    const expectedTextarea = userStudyTextField.getElementsByClassName("expected")[0];
+    inputTextarea.setAttribute("style", `position: absolute; z-index: 10; width: ${expectedTextarea.offsetWidth}px`);
+};
+
+const resizeHandler = () => {
+    Array.from(userStudyTextFields).forEach(field => resizeListener(field));
+};
+window.onresize = resizeHandler;
+resizeHandler();  // to handle initial page load
+
 // load the number of fields, used for tracking progress
 const totalFields = Array.from(userStudyFields).length;
 
