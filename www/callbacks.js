@@ -78,13 +78,7 @@ const __stateHandler = {
                     taskIndex: -1,  // TODO: idk how i want to retrieve this value tbh
                 }, "task");
 
-                loadingField.innerHTML =
-                    `<div class="col-2 justify-content-center">
-                        <div class="spinner-border"></div>
-                    </div>
-                    <div class="col">
-                        <p>If the next task has not yet loaded, please refresh the page by pressing F5.</p>
-                    </div>`;
+                loadingField.removeAttribute("style");
             }
 
             // then enable the next field

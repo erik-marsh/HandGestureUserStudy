@@ -16,18 +16,14 @@ const inputHandler = async e => {
     });
 
     if (res.ok) {
-        loadingField.innerHTML =
-        `<div class="col-2 justify-content-center">
-            <div class="spinner-border"></div>
-        </div>
-        <div class="col">
-            <p>If the study has not yet loaded, please refresh the page by pressing F5.</p>
-        </div>`;
+        loadingField.removeAttribute("style");
+        errorDiv.setAttribute("style", "visibility: hidden;");
         return;
     }
 
     if (res.status === 403) {
         errorDiv.textContent = "The ID that you entered is already in use. Please enter a different ID.";
+        errorDiv.removeAttribute("style");
         return;
     }
 

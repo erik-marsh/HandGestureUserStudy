@@ -8,13 +8,7 @@ proceedButton.addEventListener("click", async e => {
     });
 
     if (res.ok) {
-        loadingField.innerHTML =
-        `<div class="col-2 justify-content-center">
-            <div class="spinner-border"></div>
-        </div>
-        <div class="col">
-            <p>If the study has not yet loaded, please refresh the page by pressing F5.</p>
-        </div>`;
+        loadingField.removeAttribute("style");
         return;
     }
 
