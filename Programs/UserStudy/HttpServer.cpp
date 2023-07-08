@@ -299,6 +299,63 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     };
     server.Post("/acknowledgeTutorial", tutorialProgressHandler);
 
+    auto formTestHandler = [&formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
+                            &endTemplate](const Req& req, Res& res)
+    {
+        if (!req.has_param("target"))
+        {
+            res.status = 404;
+            return;
+        }
+
+        auto target = req.get_param_value("target");
+        if (target == "start")
+        {
+            res.set_content(startTemplate.GetSubstitution(), "text/html");
+        }
+        else if (target == "tutorial")
+        {
+            res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
+        }
+        else if (target == "end")
+        {
+            res.set_content(endTemplate.GetSubstitution(), "text/html");
+        }
+        else if (target == "form")
+        {
+            using namespace Helpers::StringPools;
+            std::vector<std::string> strings;
+            strings.push_back("NO_DEVICE");
+            strings.push_back("0");
+            strings.push_back("0");
+            strings.push_back(SelectRandom(Names));
+            strings.push_back(SelectRandom(EmailAddresses));
+            strings.push_back(SelectRandom(PhysicalAddresses));
+            strings.push_back(SelectRandom(DateOfBirth));
+            strings.push_back(SelectRandom(IdNumbers));
+            strings.push_back(SelectRandom(CardNumbers));
+            formTemplate.Substitute(strings);
+            res.set_content(formTemplate.GetSubstitution(), "text/html");
+        }
+        else if (target == "email")
+        {
+            using namespace Helpers::StringPools;
+            std::vector<std::string> strings;
+            strings.push_back("NO_DEVICE");
+            strings.push_back("0");
+            strings.push_back("0");
+            strings.push_back(SelectRandom(EmailAddresses));
+            strings.push_back(SelectRandom(EmailBodyText));
+            emailTemplate.Substitute(strings);
+            res.set_content(emailTemplate.GetSubstitution(), "text/html");
+        }
+        else
+        {
+            res.status = 404;
+        }
+    };
+    server.Get("/test", formTestHandler);
+
     auto formHandler = [&state, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
                         &endTemplate](const Req& req, Res& res)
     {
