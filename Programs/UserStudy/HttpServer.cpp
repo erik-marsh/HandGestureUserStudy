@@ -556,7 +556,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
 
     server.listen("localhost", 5000);
     std::cout << "server.listen exited" << std::endl;
-    // heartbeatThread.join();  // TODO: note that the sleep_for is still running
+    heartbeatThread.join();
 
     std::cout << "Shutting down HTTP thread..." << std::endl;
 }
