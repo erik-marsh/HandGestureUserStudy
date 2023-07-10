@@ -20,7 +20,8 @@
         <h2>What will you be doing today?</h2>
         <p>
           In this study, we aim to investigate the differences between using
-          a conventional computer mouse and an optical hand-tracking device to move a cursor around the screen.
+          a conventional computer mouse and a gesture-based method
+          (using the <em>Leap Motion</em>, an optical hand-tracking device) to move a cursor around the screen.
           To accomplish this, we have prepared a set of forms that you will need to fill out.
           To complete the forms, you will need to navigate to the correct fields with your cursor,
           enter the required text using the keyboard, and move on to the next field.
@@ -28,11 +29,11 @@
         <p>
           The flow of the user study is as follows:
         <ul>
-          <li>You will be given time to familiarize yourself with the inputs expected of you.</li>
-          <li>Depending on your user ID, you will start by using the mouse or the Leap Motion optical hand-tracker for
-            cursor movement.</li>
-          <li>You will fill out a form and an email.</li>
-          <li>You will repeat those tasks with the input device you have not yet used.</li>
+          <li>You will be given time to familiarize yourself with the gesture input system.</li>
+          <li>Depending on your user ID, you will start by using the computer mouse or the gesture system for cursor
+            movement.</li>
+          <li>You will fill out a form and an email with predetermined sample values.</li>
+          <li>You will repeat those same tasks with the other input device you have not yet used.</li>
         </ul>
         </p>
         <h2>Entering text</h2>
@@ -50,6 +51,7 @@
           To correct the mistake, press backspace until your text becomes black again and the light gray text reappears.
           When you have entered the text fully, it will turn green and the field will be disabled,
           indicating that it is time to proceed to the next field.
+          You may experiment with this below.
         </p>
         <div class="row my-3">
           <div class="col"></div>
@@ -66,13 +68,12 @@ You need to input this entire string verbatim.
         <h2>Moving the cursor</h2>
         <p>
           During the user study, you will see a bar at the top of the page (see Fig. 1) that
-          indicates which task you are currently working on, and the input device that is currently active.
-          This is the device that you are expected to be using to move the cursor.
+          indicates which input device that is currently active, and the task you are currently working on.
+          This active input device is the device that you are expected to be using to move the cursor.
           Take care in ensuring that you are using the correct device.
           When you are expected to use the mouse, gesture input is disabled.
           However, when you are expected to use gesture input,
-          the mouse is still operational, because it is impractical
-          (and possibly dangerous) to disable the mouse entirely.
+          the mouse is still operational, because it is impractical to disable the mouse entirely.
         </p>
         <div class="row my-3">
           <div class="col"></div>
@@ -93,29 +94,27 @@ You need to input this entire string verbatim.
           </div>
           <div class="col"></div>
         </div>
+        <h3>Moving the cursor with the mouse</h3>
         <p>
-          Cursor movement using the mouse is exactly the same as you would expect from normal computer use.
+          Cursor movement using the mouse works in the same way that you would expect it to.
         </p>
+        <h3>Moving the cursor with hand gestures</h3>
         <p>
-          Cursor movement using the Leap Motion (gesture input) requires some explanation.
-          The core principal behind the gesture-based mouse movement system is as follows:
-          when the user's hands are in a specific pose, the cursor will move at a constant velocity
-          in the direction that the user's fingertips are pointing.
-          The specific pose in this case is the "thumb up" pose:
-          the user's hand should be oriented in such a way that their thumb is pointing directly upwards,
-          as if they were giving a "thumbs up" gesture.
-          (Your thumbs need not be pointing directly up,
+          Cursor movement using the gesture input system requires some explanation.
+          The <em>Leap Motion</em> is placed in front of your keyboard.
+          Note that <b>only one hand</b> may control the cursor at a time.
+          To move the cursor, you hand must be placed in a "thumbs up" position (see Fig. 2).
+          <!-- TODO: figure and better explanation -->
+          In this position, the mouse will move in the direction that your fingertips are pointing.
+          (Your thumbs do not necessarily need to be pointing directly up,
           but your hand should be posed in such a manner that allows you to do so).
         </p>
         <p>
           Note that this pose only allows the fingertips to face any direction within a half-circle.
-          This is problematic: we are only able to move the cursor in 180 degrees
-          (as opposed to the expected 360 degrees).
-          This is alleviated by using both hands to move the cursor.
+          As a result, you will have to use both hands to move the cursor.
           If you wanted to move to the cursor to the left, you would use your right hand.
           Similarly, if you wanted to move the cursor to the right, you would use your left hand.
           The direction of your palm indicates the "direction" of the half-circle you can move your cursor in.
-          As a result, you should only be using one hand at a time to control the cursor.
         </p>
         <p>
           To click, simply face your palm downwards.
@@ -124,11 +123,11 @@ You need to input this entire string verbatim.
           On the other screen, you should be able to see a visualization of what the Leap Motion is seeing.
           Gesture input is currently active.
           Feel free to experiment with moving the mouse.
-          The individual that is running the user study is available if you need help with the gesture input system.
+          A reasercher is available if you need help with the gesture input system.
           Once you are comfortable with the gesture input system, you may begin the user study.
         </p>
         <div class="mb-3 d-flex justify-content-center">
-          <button id="proceed" class="w-auto btn btn-primary">I understand, let's start!</button>
+          <button id="proceed" class="w-auto btn btn-primary">Start</button>
         </div>
         <div id="loading" style="display: none;">
           <div class="d-flex justify-content-center mb-3">
