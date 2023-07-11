@@ -13,7 +13,7 @@
 
 <body>
   <div class="container-fluid bg-light p-0">
-    <main class="row">
+    <main class="row mx-0">
       <div class="col"></div>
       <div class="col-6 my-3">
         <h1>Tutorial</h1>
@@ -116,9 +116,42 @@ You need to input this entire string verbatim.
           Similarly, if you wanted to move the cursor to the right, you would use your left hand.
           The direction of your palm indicates the "direction" of the half-circle you can move your cursor in.
         </p>
+        <!-- TODO: some mention of how you can only move in 8 directions-->
+        <figure class="figure">
+          <div class="row">
+            <div class="col">
+              <img class="figure-img img-fluid rounded" src="UpArrow.png">
+            </div>
+            <div class="col">
+              <img class="figure-img img-fluid rounded" src="UpRightArrow.png">
+            </div>
+            <div class="col">
+              <img class="figure-img img-fluid rounded" src="RightArrow.png">
+            </div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <img class="figure-img img-fluid rounded" src="DownRightArrow.png">
+            </div>
+            <div class="col">
+              <img class="figure-img img-fluid rounded" src="DownArrow.png">
+            </div>
+          </div>
+          <figcaption class="figure-caption">
+            Figure 2: The mapping between hand gestures and cursor movement directions for the user's left hand.
+            The yellow arrow indicates the direction that the hand gesture will move the cursor on screen.</figcaption>
+        </figure>
         <p>
-          To click, simply face your palm downwards.
+          To perform a left click, simply face your palm downwards.
         </p>
+        <figure class="figure">
+          <div class="text-center">
+            <img src="LeftClick.png" class="figure-img img-fluid rounded" style="width: 50%;">
+          </div>
+          <figcaption class="figure-caption">
+            Figure 3: The gesture used to perform a left click with the gesture input system.
+          </figcaption>
+        </figure>
         <p>
           On the other screen, you should be able to see a visualization of what the Leap Motion is seeing.
           Gesture input is currently active.
@@ -138,7 +171,7 @@ You need to input this entire string verbatim.
           </div>
         </div>
       </div>
-      <div class="col"></div>
+      <div class="col mr-0"></div>
     </main>
   </div>
 </body>
