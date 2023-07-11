@@ -9,6 +9,7 @@
 #include <Helpers/JSONEvents.hpp>
 #include <Helpers/StringPools.hpp>
 #include <Helpers/UserIDLock.hpp>
+#include <Input/SimulatedMouse.hpp>
 #include <exception>
 #include <filesystem>
 #include <iostream>
@@ -376,6 +377,10 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             res.set_content(endTemplate.GetSubstitution(), "text/html");
             return;
         }
+
+        // while in the study:
+        // we want to reset mouse position before each task
+        Input::Mouse::MoveAbsolute(100, 100);
 
         std::string device;
         switch (COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex][state.currentDeviceIndex])
