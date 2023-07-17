@@ -327,6 +327,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             using namespace Helpers::StringPools;
             std::vector<std::string> strings;
             strings.push_back("NO_DEVICE");
+            strings.push_back("NO_DEVICE");
             strings.push_back("0");
             strings.push_back("0");
             strings.push_back(SelectRandom(Names));
@@ -404,6 +405,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         switch (TASK_SEQUENCE[state.currentTaskIndex])
         {
             case Task::Form:
+                strings.emplace(strings.begin(), device);
                 strings.push_back(SelectRandom(Names));
                 strings.push_back(SelectRandom(EmailAddresses));
                 strings.push_back(SelectRandom(PhysicalAddresses));
