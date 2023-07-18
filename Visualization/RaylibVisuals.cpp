@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <iostream>
+#include <Math/MathHelpers.hpp>
 
 using Vec3 = Math::Vector3Common;
 
@@ -114,72 +115,54 @@ void DrawHand(LEAP_HAND &hand)
             boneStart = ProjectLeapIntoRaylibSpace(boneStart, armEnd, scaleFactor);
             boneEnd = ProjectLeapIntoRaylibSpace(boneEnd, armEnd, scaleFactor);
 
-            // Since we do calculations on the distal bone, we highlight it.
-            Color color = j == 3 ? RED : BLACK;
-            DrawLine3D(boneStart.AsRaylib(), boneEnd.AsRaylib(), color);
+            // Since we are concerned with the distal bones of non-thumbs, we highlight them.
+            if (i != 0 && j == 3)
+            {
+                Vec3 distalVec = Vec3::Subtract(boneEnd, boneStart);
+                distalVec = Vec3::ScalarMultiply(distalVec, 2.0f);
+                distalVec = Vec3::Add(boneStart, distalVec);
+                DrawCylinderEx(boneStart.AsRaylib(), distalVec.AsRaylib(), 0.1f, 0.0f, 50, RED);
+            }
+            else
+            {
+                DrawLine3D(boneStart.AsRaylib(), boneEnd.AsRaylib(), BLACK);
+            }
         }
     }
 
-    // Draw planes that indicate how each individual finger bend angle is being measured
-    float size = 3.0f;
-    float opacity = 0.35f;
+    DrawCylinderEx(VECTOR_ORIGIN, palmNormal.AsRaylib(), 0.2f, 0.0f, 50, BLUE);
 
-    Color color = GREEN;
-    color.a = static_cast<unsigned char>(opacity * 255);
+    // Might be useful later, idk
+    // float averageAngle = 0.0f;
+    // Vec3 fingerBendPlaneNormal = Vec3::CrossProduct(palmDirection, palmNormal);
+    // for (int i = 1; i < 5; i++)
+    // {
+    //     LEAP_DIGIT finger = hand.digits[i];
+    //     Vec3 distalTip(finger.distal.next_joint);
+    //     Vec3 distalBase(finger.distal.prev_joint);
+    //     auto dir = Vec3::Subtract(distalTip, distalBase);
 
-    // NOTE: re-retrieval of palm normal
-    Vec3 pn = Vec3::SetMagnitude(palmNormal, size);
-    Vec3 pd = Vec3::SetMagnitude(palmDirection, size);
-    Vec3 cr = Vec3::CrossProduct(pn, pd);
-    cr = Vec3::SetMagnitude(cr, size);
-    Vec3 crInverse = Vec3::ScalarMultiply(cr, -1.0f);
+    //     Vec3 projectedDir = Vec3::ProjectOntoPlane(dir, fingerBendPlaneNormal);
+    //     float angle = Vec3::Angle(palmDirection, projectedDir);
 
-    DrawLine3D(VECTOR_ORIGIN, palmNormal.AsRaylib(), BLUE);
+    //     float signingAngle = Vec3::Angle(palmNormal, projectedDir);
+    //     if (signingAngle > Math::_PI / 2.0f) angle *= -1.0f;
 
-    Vec3 palmPos = Vec3(hand.palm.position);
-    palmPos = ProjectLeapIntoRaylibSpace(palmPos, armEnd, scaleFactor);
+    //     if (angle < 0.0f)
+    //     {
+    //         // clamp to 0 or 180, whichever is closer
+    //         if (angle > (Math::_PI / 2.0f) * -1.0f)
+    //             angle = 0.0f;
+    //         else
+    //             angle = Math::_PI;
+    //     }
 
-    DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), cr.AsRaylib(), color);
-    DrawPlane(palmPos.AsRaylib(), pd.AsRaylib(), crInverse.AsRaylib(), color);
+    //     averageAngle += angle;
+    // }
+    // averageAngle /= 4.0f;
 
-    // Draw text to show each individual finger angle as well as the average
-    const Vec3 textOrigin{4.0f, 6.0f, 0.0f};
-    Font font = GetFontDefault();
-    float averageAngle = 0.0f;
-    constexpr float fontSize = 3.0f;
-    constexpr float fontSpacing = 1.0f;
-    constexpr float lineSpacing = 0.0f;
-    constexpr float textRotationAngle = 90.0f;
-    const Vector3 textRotationAxis{1.0f, 0.0f, 0.0f};
-
-    for (int i = 1; i < 5; i++)
-    {
-        LEAP_DIGIT finger = hand.digits[i];
-        Vec3 distalTip(finger.distal.next_joint);
-        Vec3 distalBase(finger.distal.prev_joint);
-        auto dir = Vec3::Subtract(distalTip, distalBase);
-        Vec3 fingerBendPlaneNormal = Vec3::CrossProduct(palmDirection, palmNormal);
-
-        Vec3 projectedDir = Vec3::ProjectOntoPlane(dir, fingerBendPlaneNormal);
-        float angle =
-            Vec3::Angle(palmDirection, projectedDir) * 57.2957795131f;  // Input::RAD_TO_DEG;
-
-        Vec3 textPos = {textOrigin.X(), textOrigin.Y() - ((i - 1) * 0.5f), textOrigin.Z()};
-
-        const char *opt = TextFormat("angle=%.0f", angle);
-        DrawText3D(font, opt, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
-                          RED, textRotationAngle, textRotationAxis);
-
-        Vec3 normalizedTip = ProjectLeapIntoRaylibSpace(distalTip, armEnd, scaleFactor);
-        DrawLine3D(normalizedTip.AsRaylib(), textPos.AsRaylib(), WHITE);
-
-        averageAngle += angle;
-    }
-    averageAngle /= 4.0f;
-    const char *text = TextFormat("     average angle=%.0f", averageAngle);
-    Vec3 textPos = {textOrigin.X(), textOrigin.Y() - 2.0f, textOrigin.Z()};
-    DrawText3D(font, text, textPos.AsRaylib(), fontSize, fontSpacing, lineSpacing, false,
-                      RED, textRotationAngle, textRotationAxis);
+    // get a vector of the direction of the average angle
+    // Vector3 avgDirectionVector = Vector3RotateByAxisAngle(palmDirection.AsRaylib(), fingerBendPlaneNormal.AsRaylib(), averageAngle);
 }
 
 void DrawPlane(Vector3 centerPos, Vector3 vec1, Vector3 vec2, Color color)

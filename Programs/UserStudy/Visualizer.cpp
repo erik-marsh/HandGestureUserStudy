@@ -36,6 +36,10 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
     constexpr int rectX = rectCenterX - (rectWidth / 2);
     constexpr int rectY = rectCenterY - (rectHeight / 2);
 
+    constexpr int fontSize = 20;
+    constexpr int lineHeight = 20;
+    constexpr int lineIndent = 20;
+
     std::stringstream ss;
     ss << std::boolalpha;
 
@@ -61,21 +65,48 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
             static_cast<int>(-1.0f * renderables.avgFingerDirY * vectorLength * 0.5f);
 
         DrawRectangle(rectX, rectY, rectWidth, rectHeight, DARKGRAY);
+        DrawRectangle(rectX, rectY - lineHeight * 1.25f, rectWidth, lineHeight * 1.25f, DARKGRAY);
 
-        DrawLine(rectCenterX, rectCenterY, rectCenterX + cursorDirX, rectCenterY + cursorDirY,
-                 YELLOW);
-        DrawLine(rectCenterX, rectCenterY, rectCenterX + fingerDirX, rectCenterY + fingerDirY,
-                 PURPLE);
+        // DrawLine(rectCenterX, rectCenterY, rectCenterX + cursorDirX, rectCenterY + cursorDirY,
+        //          YELLOW);
+        // DrawLine(rectCenterX, rectCenterY, rectCenterX + fingerDirX, rectCenterY + fingerDirY,
+        //          PURPLE);
+        // i'm not proving this in text yet lol
+        constexpr float delta = 5.0f;
+        float theta = std::atanf(cursorDirY / cursorDirX);  // TODO: division by 0, fix please
+        float phi = (3.141592741F / 2.0f) - theta;
+
+        auto t1 = Vector2(static_cast<int>(delta * std::cos(phi)), static_cast<int>(delta * std::sin(phi)));
+        auto t2 = Vector2(-t1.x, -t1.y);
+        auto t3 = Vector2(rectCenterX + cursorDirX, rectCenterY + cursorDirY);
+
+        DrawTriangle(t3, t1, t2, YELLOW);
+
+        //DrawTriangle(Vector2(rectCenterX, rectCenterY + 5), Vector2(rectCenterX, rectCenterY - 5), Vector2(rectCenterX + cursorDirX, rectCenterY + cursorDirY), YELLOW);
+        //DrawTriangle(Vector2(rectCenterX, rectCenterY + 5), Vector2(rectCenterX, rectCenterY - 5), Vector2(rectCenterX + fingerDirX, rectCenterY + fingerDirY), PURPLE);
         EndMode2D();
 
         const bool isLeft = renderables.hand.type == eLeapHandType_Left;
         ss.str("");  // clear stream
         ss << (isLeft ? "Left" : "Right") << " Hand:\n"
            << "    Cursor direction: (" << renderables.cursorDirX << ", " << renderables.cursorDirY
-           << "); "
-           << "    Clicked?: " << renderables.didClick << "\n\n";
+           << ");\n    Clicked?: " << renderables.didClick;
 
-        DrawText(ss.str().c_str(), 10, 10, 10, BLACK);
+        DrawText(ss.str().c_str(), lineIndent + SCREEN_WIDTH / 2, lineHeight, fontSize, BLACK);
+
+        DrawText("The blue cylinder indicates the direction of your palm.", lineIndent, lineHeight,
+                 fontSize, BLUE);
+        DrawText("The red cylinders indicate the directions of your fingertips.", lineIndent,
+                 lineHeight * 3, fontSize, RED);
+        DrawText("The gray box indicates what will happen to the cursor.", lineIndent,
+                 lineHeight * 6, fontSize, BLACK);
+        DrawText("The purple line shows the average direction of your fingertips,", 2 * lineIndent,
+                 lineHeight * 8, fontSize, PURPLE);
+        DrawText("mapped to the screen.", 2 * lineIndent, lineHeight * 10, fontSize, PURPLE);
+        DrawText("The yellow line shows the direction the cursor will move in.", 2 * lineIndent,
+                 lineHeight * 12, fontSize, YELLOW);
+
+        DrawText("Cursor movement:", 10, rectY - lineHeight, fontSize, WHITE);
         EndDrawing();
     }
 
