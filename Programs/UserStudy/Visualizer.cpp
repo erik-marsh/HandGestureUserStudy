@@ -3,12 +3,33 @@
 #include <raylib.h>
 #include <rcamera.h>
 
+#include <Math/MathHelpers.hpp>
 #include <Visualization/RaylibVisuals.hpp>
 #include <iostream>
 #include <sstream>
 
 namespace Visualization
 {
+
+void MakeDirectionalTriangle(int x, int y, int rectCenterX, int rectCenterY, int delta, Color color)
+{
+    constexpr float pi_2 = Math::_PI / 2.0f;
+
+    // i'm not proving this in text yet lol
+    // lim_{x -> 0} = pi/2
+    const float theta = x == 0 ? pi_2 : std::atanf(y / x);
+    const float phi = pi_2 - theta;
+
+    const auto t1_offset = Vector2(static_cast<int>(delta * std::cos(phi)),
+                                   static_cast<int>(-1.0f * delta * std::sin(phi)));
+    const auto t2_offset = Vector2(-t1_offset.x, -t1_offset.y);
+    const auto t1 = Vector2(rectCenterX + t1_offset.x, rectCenterY + t1_offset.y);
+    const auto t2 = Vector2(rectCenterX + t2_offset.x, rectCenterY + t2_offset.y);
+    const auto t3 = Vector2(rectCenterX + x, rectCenterY + y);
+
+    DrawTriangle(t3, t2, t1, color);
+    DrawTriangle(t3, t1, t2, color);
+}
 
 void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
 {
@@ -41,7 +62,6 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
     constexpr int lineIndent = 20;
 
     std::stringstream ss;
-    ss << std::boolalpha;
 
     while (isRunning.load())
     {
@@ -61,36 +81,21 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
         const int cursorDirY = static_cast<int>(-1.0f * renderables.cursorDirY * vectorLength);
 
         const int fingerDirX = static_cast<int>(renderables.avgFingerDirX * vectorLength * 0.5f);
-        const int fingerDirY =
-            static_cast<int>(-1.0f * renderables.avgFingerDirY * vectorLength * 0.5f);
+        const int fingerDirY = static_cast<int>(renderables.avgFingerDirY * vectorLength * -0.5f);
 
         DrawRectangle(rectX, rectY, rectWidth, rectHeight, DARKGRAY);
         DrawRectangle(rectX, rectY - lineHeight * 1.25f, rectWidth, lineHeight * 1.25f, DARKGRAY);
 
-        // DrawLine(rectCenterX, rectCenterY, rectCenterX + cursorDirX, rectCenterY + cursorDirY,
-        //          YELLOW);
-        // DrawLine(rectCenterX, rectCenterY, rectCenterX + fingerDirX, rectCenterY + fingerDirY,
-        //          PURPLE);
-        // i'm not proving this in text yet lol
-        constexpr float delta = 5.0f;
-        float theta = std::atanf(cursorDirY / cursorDirX);  // TODO: division by 0, fix please
-        float phi = (3.141592741F / 2.0f) - theta;
+        MakeDirectionalTriangle(cursorDirX, cursorDirY, rectCenterX, rectCenterY, 10, YELLOW);
+        MakeDirectionalTriangle(fingerDirX, fingerDirY, rectCenterX, rectCenterY, 5, PURPLE);
 
-        auto t1 = Vector2(static_cast<int>(delta * std::cos(phi)), static_cast<int>(delta * std::sin(phi)));
-        auto t2 = Vector2(-t1.x, -t1.y);
-        auto t3 = Vector2(rectCenterX + cursorDirX, rectCenterY + cursorDirY);
-
-        DrawTriangle(t3, t1, t2, YELLOW);
-
-        //DrawTriangle(Vector2(rectCenterX, rectCenterY + 5), Vector2(rectCenterX, rectCenterY - 5), Vector2(rectCenterX + cursorDirX, rectCenterY + cursorDirY), YELLOW);
-        //DrawTriangle(Vector2(rectCenterX, rectCenterY + 5), Vector2(rectCenterX, rectCenterY - 5), Vector2(rectCenterX + fingerDirX, rectCenterY + fingerDirY), PURPLE);
         EndMode2D();
 
         const bool isLeft = renderables.hand.type == eLeapHandType_Left;
         ss.str("");  // clear stream
         ss << (isLeft ? "Left" : "Right") << " Hand:\n"
            << "    Cursor direction: (" << renderables.cursorDirX << ", " << renderables.cursorDirY
-           << ");\n    Clicked?: " << renderables.didClick;
+           << ");\n    Clicked?: " << (renderables.didClick ? "Yes" : "No");
 
         DrawText(ss.str().c_str(), lineIndent + SCREEN_WIDTH / 2, lineHeight, fontSize, BLACK);
 
