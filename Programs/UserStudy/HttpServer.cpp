@@ -258,19 +258,14 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             }
 
             state.isStudyStarted = true;
-            state.counterbalancingIndex = state.userId % 2;
             state.userId = result.Value().userId;
+            state.counterbalancingIndex = state.userId % 2;
 
             userIdLock.Lock(state.userId);
             std::stringstream fsss;
             fsss << baseDir << "/user" << state.userId << ".log";
             std::string logFilename = fsss.str();
             state.logger.OpenLogFile(logFilename);
-
-            // TODO: need to test this to make sure the device (de)activation works
-            auto deviceSequence = COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex];
-            auto activeDevice = deviceSequence[0];
-            isLeapDriverActive.store(activeDevice == InputDevice::LeapMotion);
 
             std::cout << "Starting user study for user id " << state.userId
                       << " (counterbalancing index=" << state.counterbalancingIndex << ")"
@@ -359,7 +354,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     server.Get("/test", formTestHandler);
 
     auto formHandler = [&state, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
-                        &endTemplate](const Req& req, Res& res)
+                        &endTemplate, &isLeapDriverActive](const Req& req, Res& res)
     {
         if (!state.isStudyStarted)
         {
@@ -370,6 +365,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         if (!state.isTutorialDone)
         {
             res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
+            isLeapDriverActive.store(true);
             return;
         }
 
@@ -388,12 +384,15 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         {
             case InputDevice::Mouse:
                 device = "Mouse";
+                isLeapDriverActive.store(false);
                 break;
             case InputDevice::LeapMotion:
                 device = "Leap Motion";
+                isLeapDriverActive.store(true);
                 break;
             default:
                 device = "<UNKNOWN>";
+                isLeapDriverActive.store(false);
                 break;
         }
 
