@@ -55,7 +55,7 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
     SetTargetFPS(60);
 
     Camera3D camera3D{};
-    camera3D.position = Vector3{10.0f, 10.0f, 10.0f};
+    camera3D.position = Vector3{0.0f, 5.0f, 5.0f};
     camera3D.target = Vector3{0.0f, 0.0f, 0.0f};
     camera3D.up = Vector3{0.0f, 1.0f, 0.0f};
     camera3D.fovy = 45.0f;
