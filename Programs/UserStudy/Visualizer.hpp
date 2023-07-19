@@ -11,6 +11,7 @@ namespace Visualization
 
 struct Renderables
 {
+    bool hasHand;
     LEAP_HAND hand;
     bool didClick;
     float avgFingerDirX;

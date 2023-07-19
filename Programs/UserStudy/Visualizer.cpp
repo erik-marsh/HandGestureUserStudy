@@ -3,6 +3,7 @@
 #include <raylib.h>
 #include <rcamera.h>
 
+#include <Input/LeapMotionGestureProvider.hpp>
 #include <Math/MathHelpers.hpp>
 #include <Visualization/RaylibVisuals.hpp>
 #include <iostream>
@@ -10,6 +11,21 @@
 
 namespace Visualization
 {
+
+constinit const char* const blueMsg = "The blue cylinder indicates the direction of your palm.";
+constinit const char* const redMsg =
+    "The red cylinders indicate the directions of your fingertips.";
+constinit const char* const coneMsg1 = "The cones correspond to the gesture recognition poses.";
+constinit const char* const coneMsg2 =
+    "When your hand pose is being recognized (the blue cylinder is";
+constinit const char* const coneMsg3 =
+    "pointing within the cone), the corresponding cone will turn green.";
+constinit const char* const blackMsg = "The gray box indicates what will happen to the cursor.";
+constinit const char* const purpleMsg1 =
+    "The purple line shows the average direction of your fingertips,";
+constinit const char* const purpleMsg2 = "mapped to the screen.";
+constinit const char* const yellowMsg =
+    "The yellow line shows the direction the cursor will move in.";
 
 void MakeDirectionalTriangle(int x, int y, int rectCenterX, int rectCenterY, int delta, Color color)
 {
@@ -65,6 +81,9 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
 
     while (isRunning.load())
     {
+        const bool isLeft = renderables.hand.type == eLeapHandType_Left;
+        const bool hasMovement = renderables.cursorDirX != 0.0f || renderables.cursorDirY != 0.0f;
+
         UpdateCamera(camera3D);
 
         BeginDrawing();
@@ -73,6 +92,24 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
         BeginMode3D(camera3D);
         DrawCartesianBasis();
         DrawHand(renderables.hand);
+
+        // draw tolerance cones
+        constexpr float toleranceConeLength = 2.0f;
+        const float outerRadius =
+            toleranceConeLength * std::tanf(Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS);
+        const auto positiveX = Vector3(toleranceConeLength, 0.0f, 0.0f);
+        const auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
+        const auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
+
+        const Color toleranceColorX =
+            renderables.hasHand ? (isLeft && hasMovement ? GREEN : BLACK) : BLACK;
+        const Color toleranceColorMX =
+            renderables.hasHand ? (!isLeft && hasMovement ? GREEN : BLACK) : BLACK;
+        const Color toleranceColorMY = renderables.didClick ? GREEN : BLACK;
+
+        DrawCylinderWiresEx(VECTOR_ORIGIN, positiveX, 0.0f, outerRadius, 10, toleranceColorX);
+        DrawCylinderWiresEx(VECTOR_ORIGIN, negativeX, 0.0f, outerRadius, 10, toleranceColorMX);
+        DrawCylinderWiresEx(VECTOR_ORIGIN, negativeY, 0.0f, outerRadius, 10, toleranceColorMY);
         EndMode3D();
 
         BeginMode2D(camera2D);
@@ -83,33 +120,31 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
         const int fingerDirX = static_cast<int>(renderables.avgFingerDirX * vectorLength * 0.5f);
         const int fingerDirY = static_cast<int>(renderables.avgFingerDirY * vectorLength * -0.5f);
 
-        DrawRectangle(rectX, rectY, rectWidth, rectHeight, DARKGRAY);
-        DrawRectangle(rectX, rectY - lineHeight * 1.25f, rectWidth, lineHeight * 1.25f, DARKGRAY);
+        DrawRectangle(rectX, rectY - (lineHeight * 1.25f), rectWidth,
+                      rectHeight + (lineHeight * 1.25f), DARKGRAY);
 
         MakeDirectionalTriangle(cursorDirX, cursorDirY, rectCenterX, rectCenterY, 10, YELLOW);
         MakeDirectionalTriangle(fingerDirX, fingerDirY, rectCenterX, rectCenterY, 5, PURPLE);
 
         EndMode2D();
 
-        const bool isLeft = renderables.hand.type == eLeapHandType_Left;
         ss.str("");  // clear stream
-        ss << (isLeft ? "Left" : "Right") << " Hand:\n"
-           << "    Cursor direction: (" << renderables.cursorDirX << ", " << renderables.cursorDirY
-           << ");\n    Clicked?: " << (renderables.didClick ? "Yes" : "No");
+        ss << "Active hand.....: " << (renderables.hasHand ? (isLeft ? "Left" : "Right") : "None")
+           << "\n"
+           << "Clicked?........: " << (renderables.didClick ? "Yes" : "No");
+        DrawText(ss.str().c_str(), lineIndent + (3 * SCREEN_WIDTH / 4),
+                 SCREEN_HEIGHT - (3 * lineHeight), fontSize, BLACK);
 
-        DrawText(ss.str().c_str(), lineIndent + SCREEN_WIDTH / 2, lineHeight, fontSize, BLACK);
+        DrawText(blueMsg, lineIndent, lineHeight, fontSize, BLUE);
+        DrawText(redMsg, lineIndent, lineHeight * 3, fontSize, RED);
+        DrawText(blackMsg, lineIndent, lineHeight * 6, fontSize, BLACK);
+        DrawText(purpleMsg1, 2 * lineIndent, lineHeight * 8, fontSize, PURPLE);
+        DrawText(purpleMsg2, 2 * lineIndent, lineHeight * 10, fontSize, PURPLE);
+        DrawText(yellowMsg, 2 * lineIndent, lineHeight * 12, fontSize, YELLOW);
 
-        DrawText("The blue cylinder indicates the direction of your palm.", lineIndent, lineHeight,
-                 fontSize, BLUE);
-        DrawText("The red cylinders indicate the directions of your fingertips.", lineIndent,
-                 lineHeight * 3, fontSize, RED);
-        DrawText("The gray box indicates what will happen to the cursor.", lineIndent,
-                 lineHeight * 6, fontSize, BLACK);
-        DrawText("The purple line shows the average direction of your fingertips,", 2 * lineIndent,
-                 lineHeight * 8, fontSize, PURPLE);
-        DrawText("mapped to the screen.", 2 * lineIndent, lineHeight * 10, fontSize, PURPLE);
-        DrawText("The yellow line shows the direction the cursor will move in.", 2 * lineIndent,
-                 lineHeight * 12, fontSize, YELLOW);
+        DrawText(coneMsg1, (SCREEN_WIDTH / 2) + lineIndent, lineHeight, fontSize, BLACK);
+        DrawText(coneMsg2, (SCREEN_WIDTH / 2) + lineIndent, lineHeight * 3, fontSize, BLACK);
+        DrawText(coneMsg3, (SCREEN_WIDTH / 2) + lineIndent, lineHeight * 5, fontSize, BLACK);
 
         DrawText("Cursor movement:", 10, rectY - lineHeight, fontSize, WHITE);
         EndDrawing();

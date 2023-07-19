@@ -27,6 +27,8 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
     constexpr Nanos frameTime = Nanos(1'000'000);  // 1ms
 
     bool isClickDisengaged = true;
+    float dxAccumulator = 0.0f;
+    float dyAccumulator = 0.0f;
 
     while (isRunning.load())
     {
@@ -39,6 +41,7 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
         // clear out renderables
         // TODO: investigate whether or not this needs to be synchronized with a mutex
         // if unsynced i would imagine it leads to frame tearing (not a huge deal here)
+        renderables.hasHand = false;
         renderables.hand = LEAP_HAND{};
         renderables.didClick = false;
         renderables.avgFingerDirX = 0.0f;
@@ -75,6 +78,7 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
             currentState = outState;  // yes, we only want the most recent hand
 
             renderables.hand = hand;
+            renderables.hasHand = true;
         }
 
         if (currentState)
@@ -99,9 +103,23 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
             else if (!currentState->isInClickPose)
             {
                 // originally this speed was 2px per every 16.67ms (60Hz)
-                constexpr float speed = 2.0f;
-                Input::Mouse::MoveRelative(currentState->cursorDirectionX * speed,
-                                           -1.0f * currentState->cursorDirectionY * speed);
+                constexpr float speed = 0.2f;
+                dxAccumulator += currentState->cursorDirectionX * speed;
+                dyAccumulator += currentState->cursorDirectionY * speed * -1.0f;
+
+                // The Win32 mouse movement only accepts an integer number of pixels to move.
+                // We harvest the integer part of the accumulator here,
+                int dx = static_cast<int>(dxAccumulator);
+                int dy = static_cast<int>(dyAccumulator);
+
+                // then subtract it from the accumulator (consume the integer part),
+                dxAccumulator -= static_cast<float>(dx);
+                dyAccumulator -= static_cast<float>(dy);
+
+                // and perform the movement.
+                Input::Mouse::MoveRelative(dx, dy);
+
+                // click pose and movement pose are mutually exclusive
                 isClickDisengaged = true;
             }
         }
