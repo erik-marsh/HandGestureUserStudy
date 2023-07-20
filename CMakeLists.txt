@@ -6,10 +6,10 @@ project(HandGestureUserStudy C CXX)
 # ========================================
 
 # targets
-set(MAIN_EXECUTABLE_NAME gestureDriver)
+set(MAIN_EXECUTABLE_NAME handGestureUserStudy)
+set(OLD_EXECUTABLE_NAME gestureDriver)
 set(TEST_VIRTUAL_MOUSE virtualMouse)
 set(TEST_HTTP_SERVER httpServer)
-set(TEST_THREADING threadingTest)
 set(TEST_LOGGING loggingTest)
 set(TEST_TEMPLATING templatingTest)
 set(TEST_SSE sseReliabilityTest)
@@ -68,11 +68,11 @@ set(BUILD_GAMES
 add_subdirectory(raylib)
 
 # ===================================================
-# ========== Main executable configuration ==========
+# ======== Old main executable configuration ========
 # ===================================================
 
 add_executable(
-    ${MAIN_EXECUTABLE_NAME}
+    ${OLD_EXECUTABLE_NAME}
     Input/LeapConnection.cpp
     Input/LeapMotionGestureProvider.cpp
     Input/SimulatedMouse.cpp
@@ -81,20 +81,20 @@ add_executable(
     Programs/Old/GestureDriver.cpp
     Visualization/RaylibVisuals.cpp)
 
-add_dependencies(${MAIN_EXECUTABLE_NAME} libLeapC)
+add_dependencies(${OLD_EXECUTABLE_NAME} libLeapC)
 
-target_compile_features(${MAIN_EXECUTABLE_NAME} PRIVATE cxx_std_20)
+target_compile_features(${OLD_EXECUTABLE_NAME} PRIVATE cxx_std_20)
 
 target_include_directories(
-    ${MAIN_EXECUTABLE_NAME} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_RAYLIB} ${INCLUDE_CPP_HTTPLIB}
+    ${OLD_EXECUTABLE_NAME} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_RAYLIB} ${INCLUDE_CPP_HTTPLIB}
                                     ${INCLUDE_RAPIDJSON} ${INCLUDE_LEAPSDK})
 
-target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE raylib LeapSDK::LeapC)
+target_link_libraries(${OLD_EXECUTABLE_NAME} PRIVATE raylib LeapSDK::LeapC)
 
 # ASSETS_PATH => required for raylib assets (unused)
 # I am also using _DEBUG, which is an MSVC
 # exclusive symbol that is defined implicitly in debug builds.
-target_compile_definitions(${MAIN_EXECUTABLE_NAME}
+target_compile_definitions(${OLD_EXECUTABLE_NAME}
                            PUBLIC ASSETS_PATH="${CMAKE_CURRENT_SOURCE_DIR}/assets/")
 
 # ============================================================
@@ -123,11 +123,11 @@ target_include_directories(${TEST_HTTP_SERVER} PRIVATE ${INCLUDE_MAIN} ${INCLUDE
 target_compile_features(${TEST_HTTP_SERVER} PRIVATE cxx_std_20)
 
 # ============================================================
-# =============== Threading test configuration ===============
+# ================= User study configuration =================
 # ============================================================
 
 add_executable(
-    ${TEST_THREADING}
+    ${MAIN_EXECUTABLE_NAME}
     Helpers/UserIDLock.cpp
     Helpers/JSONEvents.cpp
     HTML/HTMLTemplate.cpp
@@ -143,15 +143,15 @@ add_executable(
     Programs/UserStudy/Logging.cpp
     Visualization/RaylibVisuals.cpp)
 
-add_dependencies(${TEST_THREADING} libLeapC staticFiles htmlTemplates)
+add_dependencies(${MAIN_EXECUTABLE_NAME} libLeapC staticFiles htmlTemplates)
 
 target_include_directories(
-    ${TEST_THREADING} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAYLIB}
+    ${MAIN_EXECUTABLE_NAME} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAYLIB}
                               ${INCLUDE_LEAPSDK} ${INCLUDE_RAPIDJSON})
 
-target_compile_features(${TEST_THREADING} PRIVATE cxx_std_20)
+target_compile_features(${MAIN_EXECUTABLE_NAME} PRIVATE cxx_std_20)
 
-target_link_libraries(${TEST_THREADING} PRIVATE raylib LeapSDK::LeapC)
+target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE raylib LeapSDK::LeapC)
 
 # ============================================================
 # ================ Logging test configuration ================
