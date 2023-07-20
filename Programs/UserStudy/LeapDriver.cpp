@@ -16,7 +16,8 @@ namespace Input
 {
 
 void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& renderables,
-                std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
+                std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive,
+                std::mutex& renderableCopyMutex)
 {
     std::cout << "Starting Leap Motion driver thread..." << std::endl;
 
@@ -38,26 +39,14 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
 
         Time frameStart = Clock::now();
 
-        // clear out renderables
-        // TODO: investigate whether or not this needs to be synchronized with a mutex
-        // if unsynced i would imagine it leads to frame tearing (not a huge deal here)
-        renderables.hasHand = false;
-        renderables.hand = LEAP_HAND{};
-        renderables.didClick = false;
-        renderables.avgFingerDirX = 0.0f;
-        renderables.avgFingerDirY = 0.0f;
-        renderables.cursorDirX = 0.0f;
-        renderables.cursorDirY = 0.0f;
-
         LEAP_TRACKING_EVENT* leapFrame = connection.GetFrame();
         if (!leapFrame)
             continue;
 
-        std::optional<Leap::ProcessedHandState> currentState = std::nullopt;
-
-        for (int i = 0; i < leapFrame->nHands; i++)
+        // yes, we only want the most recent hand
+        if (leapFrame->nHands > 0)
         {
-            LEAP_HAND hand = leapFrame->pHands[i];
+            LEAP_HAND hand = leapFrame->pHands[leapFrame->nHands - 1];
 
             Leap::UnprocessedHandState inState{};
             inState.isTracking = true;
@@ -75,24 +64,21 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
             }
 
             Leap::ProcessedHandState outState = Leap::ProcessHandState(inState);
-            currentState = outState;  // yes, we only want the most recent hand
-
-            renderables.hand = hand;
-            renderables.hasHand = true;
-        }
-
-        if (currentState)
-        {
-            renderables.didClick = currentState->isInClickPose;
-            renderables.cursorDirX = currentState->cursorDirectionX;
-            renderables.cursorDirY = currentState->cursorDirectionY;
-            renderables.avgFingerDirX = currentState->averageFingerDirectionX;
-            renderables.avgFingerDirY = currentState->averageFingerDirectionY;
+            {
+                std::lock_guard<std::mutex> lock(renderableCopyMutex);
+                renderables.hasHand = true;
+                renderables.hand = hand;
+                renderables.didClick = outState.isInClickPose;
+                renderables.cursorDirX = outState.cursorDirectionX;
+                renderables.cursorDirY = outState.cursorDirectionY;
+                renderables.avgFingerDirX = outState.averageFingerDirectionX;
+                renderables.avgFingerDirY = outState.averageFingerDirectionY;
+            }
 
             // do the input finally
             // click pose and movement pose are mutually exclusive
             // poses in neither state are encoded as a relative mouse movement of (0, 0)
-            if (isClickDisengaged && currentState->isInClickPose)
+            if (isClickDisengaged && outState.isInClickPose)
             {
                 Input::Mouse::LeftClick();
                 // click is engaged
@@ -100,12 +86,12 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
                 // non-click poses will disengage the click, letting us click again
                 isClickDisengaged = false;
             }
-            else if (!currentState->isInClickPose)
+            else if (!outState.isInClickPose)
             {
                 // originally this speed was 2px per every 16.67ms (60Hz)
                 constexpr float speed = 0.2f;
-                dxAccumulator += currentState->cursorDirectionX * speed;
-                dyAccumulator += currentState->cursorDirectionY * speed * -1.0f;
+                dxAccumulator += outState.cursorDirectionX * speed;
+                dyAccumulator += outState.cursorDirectionY * speed * -1.0f;
 
                 // The Win32 mouse movement only accepts an integer number of pixels to move.
                 // We harvest the integer part of the accumulator here,
@@ -122,6 +108,11 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
                 // click pose and movement pose are mutually exclusive
                 isClickDisengaged = true;
             }
+        }
+        else
+        {
+            std::lock_guard<std::mutex> lock(renderableCopyMutex);
+            renderables = Visualization::Renderables{};
         }
 
         Time frameEnd = Clock::now();

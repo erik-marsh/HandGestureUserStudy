@@ -9,6 +9,7 @@ namespace Input
 {
 
 void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& renderables,
-                std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive);
+                std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive,
+                std::mutex& renderableCopyMutex);
 
 }

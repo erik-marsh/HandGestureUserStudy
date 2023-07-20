@@ -32,7 +32,7 @@ void MakeDirectionalTriangle(int x, int y, int rectCenterX, int rectCenterY, int
     constexpr float pi_2 = Math::_PI / 2.0f;
 
     // i'm not proving this in text yet lol
-    // lim_{x -> 0} = pi/2
+    // lim_{x -> 0}(atanf(y/x)) = pi/2
     const float theta = x == 0 ? pi_2 : std::atanf(y / x);
     const float phi = pi_2 - theta;
 
@@ -47,13 +47,15 @@ void MakeDirectionalTriangle(int x, int y, int rectCenterX, int rectCenterY, int
     DrawTriangle(t3, t1, t2, color);
 }
 
-void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
+void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning,
+                std::mutex& renderableCopyMutex)
 {
     std::cout << "Starting rendering thread..." << std::endl;
 
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Gesture Driver Debug Visualizer");
     SetTargetFPS(60);
 
+    // initialize camera settings
     Camera3D camera3D{};
     camera3D.position = Vector3{0.0f, 5.0f, 5.0f};
     camera3D.target = Vector3{0.0f, 0.0f, 0.0f};
@@ -64,6 +66,7 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
     Camera2D camera2D{};
     camera2D.zoom = 1.0f;
 
+    // initialize 2D rendering settings
     constexpr int rectCenterX = 100;
     constexpr int rectCenterY = SCREEN_HEIGHT - 100;
     constexpr int rectWidth = 200;
@@ -73,16 +76,33 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
     constexpr int rectX = rectCenterX - (rectWidth / 2);
     constexpr int rectY = rectCenterY - (rectHeight / 2);
 
+    // initialize text rendering settings
     constexpr int fontSize = 20;
     constexpr int lineHeight = 20;
     constexpr int lineIndent = 20;
 
+    // initialize tolerance cone settings
+    constexpr unsigned char toleranceConeOpacity = 150;
+    constexpr float toleranceConeLength = 2.0f;
+    const float outerRadius =
+        toleranceConeLength * std::tanf(Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS);
+    const auto positiveX = Vector3(toleranceConeLength, 0.0f, 0.0f);
+    const auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
+    const auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
+
     std::stringstream ss;
+    Renderables localRenderables{};  // Zero-initialization works for an "invalid state"
 
     while (isRunning.load())
     {
-        const bool isLeft = renderables.hand.type == eLeapHandType_Left;
-        const bool hasMovement = renderables.cursorDirX != 0.0f || renderables.cursorDirY != 0.0f;
+        {
+            std::lock_guard<std::mutex> lock(renderableCopyMutex);
+            localRenderables = renderables;  // Renderables struct is POD
+        }
+
+        const bool isLeft = localRenderables.hand.type == eLeapHandType_Left;
+        const bool hasMovement =
+            localRenderables.cursorDirX != 0.0f || localRenderables.cursorDirY != 0.0f;
 
         UpdateCamera(camera3D);
 
@@ -91,21 +111,13 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
 
         BeginMode3D(camera3D);
         DrawCartesianBasis();
-        DrawHand(renderables.hand);
-
-        // draw tolerance cones
-        constexpr float toleranceConeLength = 2.0f;
-        const float outerRadius =
-            toleranceConeLength * std::tanf(Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS);
-        const auto positiveX = Vector3(toleranceConeLength, 0.0f, 0.0f);
-        const auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
-        const auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
+        DrawHand(localRenderables.hand);
 
         const Color toleranceColorX =
-            renderables.hasHand ? (isLeft && hasMovement ? GREEN : BLACK) : BLACK;
+            localRenderables.hasHand ? (isLeft && hasMovement ? GREEN : BLACK) : BLACK;
         const Color toleranceColorMX =
-            renderables.hasHand ? (!isLeft && hasMovement ? GREEN : BLACK) : BLACK;
-        const Color toleranceColorMY = renderables.didClick ? GREEN : BLACK;
+            localRenderables.hasHand ? (!isLeft && hasMovement ? GREEN : BLACK) : BLACK;
+        const Color toleranceColorMY = localRenderables.didClick ? GREEN : BLACK;
 
         DrawCylinderWiresEx(VECTOR_ORIGIN, positiveX, 0.0f, outerRadius, 10, toleranceColorX);
         DrawCylinderWiresEx(VECTOR_ORIGIN, negativeX, 0.0f, outerRadius, 10, toleranceColorMX);
@@ -113,12 +125,14 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
         EndMode3D();
 
         BeginMode2D(camera2D);
-        const int cursorDirX = static_cast<int>(renderables.cursorDirX * vectorLength);
+        const int cursorDirX = static_cast<int>(localRenderables.cursorDirX * vectorLength);
         // multiply by -1 because Y is down in screen space
-        const int cursorDirY = static_cast<int>(-1.0f * renderables.cursorDirY * vectorLength);
+        const int cursorDirY = static_cast<int>(-1.0f * localRenderables.cursorDirY * vectorLength);
 
-        const int fingerDirX = static_cast<int>(renderables.avgFingerDirX * vectorLength * 0.5f);
-        const int fingerDirY = static_cast<int>(renderables.avgFingerDirY * vectorLength * -0.5f);
+        const int fingerDirX =
+            static_cast<int>(localRenderables.avgFingerDirX * vectorLength * 0.5f);
+        const int fingerDirY =
+            static_cast<int>(localRenderables.avgFingerDirY * vectorLength * -0.5f);
 
         DrawRectangle(rectX, rectY - (lineHeight * 1.25f), rectWidth,
                       rectHeight + (lineHeight * 1.25f), DARKGRAY);
@@ -129,9 +143,9 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning)
         EndMode2D();
 
         ss.str("");  // clear stream
-        ss << "Active hand.....: " << (renderables.hasHand ? (isLeft ? "Left" : "Right") : "None")
-           << "\n"
-           << "Clicked?........: " << (renderables.didClick ? "Yes" : "No");
+        ss << "Active hand.....: "
+           << (localRenderables.hasHand ? (isLeft ? "Left" : "Right") : "None") << "\n"
+           << "Clicked?........: " << (localRenderables.didClick ? "Yes" : "No");
         DrawText(ss.str().c_str(), lineIndent + (3 * SCREEN_WIDTH / 4),
                  SCREEN_HEIGHT - (3 * lineHeight), fontSize, BLACK);
 
