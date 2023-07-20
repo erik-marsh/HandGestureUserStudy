@@ -17,9 +17,9 @@ constinit const char* const redMsg =
     "The red cylinders indicate the directions of your fingertips.";
 constinit const char* const coneMsg1 = "The cones correspond to the gesture recognition poses.";
 constinit const char* const coneMsg2 =
-    "When your hand pose is being recognized (the blue cylinder is";
+    "When your hand pose is being recognized (the tip of the blue cylinder";
 constinit const char* const coneMsg3 =
-    "pointing within the cone), the corresponding cone will turn green.";
+    "is in the cone), the corresponding cone will turn green.";
 constinit const char* const blackMsg = "The gray box indicates what will happen to the cursor.";
 constinit const char* const purpleMsg1 =
     "The purple line shows the average direction of your fingertips,";
@@ -82,7 +82,7 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning,
     constexpr int lineIndent = 20;
 
     // initialize tolerance cone settings
-    constexpr unsigned char toleranceConeOpacity = 150;
+    constexpr unsigned char toleranceConeOpacity = 125;
     constexpr float toleranceConeLength = 2.0f;
     const float outerRadius =
         toleranceConeLength * std::tanf(Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS);
@@ -110,18 +110,21 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning,
         ClearBackground(LIGHTGRAY);
 
         BeginMode3D(camera3D);
-        DrawCartesianBasis();
         DrawHand(localRenderables.hand);
 
-        const Color toleranceColorX =
+        Color toleranceColorX =
             localRenderables.hasHand ? (isLeft && hasMovement ? GREEN : BLACK) : BLACK;
-        const Color toleranceColorMX =
+        Color toleranceColorMX =
             localRenderables.hasHand ? (!isLeft && hasMovement ? GREEN : BLACK) : BLACK;
-        const Color toleranceColorMY = localRenderables.didClick ? GREEN : BLACK;
+        Color toleranceColorMY = localRenderables.didClick ? GREEN : BLACK;
 
-        DrawCylinderWiresEx(VECTOR_ORIGIN, positiveX, 0.0f, outerRadius, 10, toleranceColorX);
-        DrawCylinderWiresEx(VECTOR_ORIGIN, negativeX, 0.0f, outerRadius, 10, toleranceColorMX);
-        DrawCylinderWiresEx(VECTOR_ORIGIN, negativeY, 0.0f, outerRadius, 10, toleranceColorMY);
+        toleranceColorX.a = toleranceConeOpacity;
+        toleranceColorMX.a = toleranceConeOpacity;
+        toleranceColorMY.a = toleranceConeOpacity;
+
+        DrawCylinderEx(VECTOR_ORIGIN, positiveX, 0.0f, outerRadius, 10, toleranceColorX);
+        DrawCylinderEx(VECTOR_ORIGIN, negativeX, 0.0f, outerRadius, 10, toleranceColorMX);
+        DrawCylinderEx(VECTOR_ORIGIN, negativeY, 0.0f, outerRadius, 10, toleranceColorMY);
         EndMode3D();
 
         BeginMode2D(camera2D);
