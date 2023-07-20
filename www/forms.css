@@ -11,16 +11,9 @@
   resize: none;
 }
 
-.expected.user-study-textarea,
-.expected.user-study-textarea:focus,
-.expected.user-study-textarea:disabled {
-  background: none;
+.form-control.user-study-textarea.expected:disabled {
+  background-color: var(--bs-body-bg);
 }
-
-/* TODO: there needs to be more visual indication of status.
-         i'm thinking... highlights *around* the fields with the color?
-         this is kinda necessary for the button case anyway
-*/
 
 .input.user-study-textarea[data-input-state=future],
 .input.user-study-textarea:focus[data-input-state=future],
@@ -45,7 +38,6 @@
 .input.user-study-textarea:focus[data-input-state=error],
 .input.user-study-textarea:disabled[data-input-state=error] {
   color: red;
-  /* background: none; */
 }
 
 .input {
