@@ -6,14 +6,15 @@
 #include <rapidjson/schema.h>
 
 #include <HTML/HTMLTemplate.hpp>
+#include <Helpers/HTTPHelpers.hpp>
 #include <Helpers/JSONEvents.hpp>
+#include <Helpers/SSE.hpp>
 #include <Helpers/StringPools.hpp>
+#include <Helpers/StudyData.hpp>
 #include <Helpers/UserIDLock.hpp>
 #include <Input/SimulatedMouse.hpp>
-#include <exception>
 #include <filesystem>
 #include <iostream>
-#include <queue>
 #include <sstream>
 #include <string>
 
@@ -25,169 +26,16 @@ namespace Http
 using Req = httplib::Request;
 using Res = httplib::Response;
 
-auto parseErrorHandler = [](const Req& req, Res& res, Helpers::ParseError error)
-{
-    switch (error)
-    {
-        case Helpers::ParseError::SchemaNotValidJSON:
-            std::cout << "Schema was not valid." << std::endl;
-            res.status = 500;  // 500 Internal Server Error
-            break;
-        case Helpers::ParseError::RequestNotValidJSON:
-            std::cout << "Request was not valid JSON." << std::endl;
-            res.status = 400;  // 400 Bad Request
-            break;
-        case Helpers::ParseError::RequestDoesNotFollowSchema:
-            std::cout << "Request did not adhere to schema." << std::endl;
-            res.status = 400;  // 400 Bad Request
-            break;
-        default:
-            std::cout << "Parse failed but there was no error?" << std::endl;
-            res.status = 500;  // 500 Internal Server Error
-            break;
-    }
-};
-
-auto printRequest = [](const Req& req, Res& res)
-{
-    std::stringstream ss;
-    ss << "[" << req.path << "] " << req.body << "\n";
-    std::cout << ss.str();
-};
-
-enum class InputDevice
-{
-    Mouse,
-    LeapMotion
-};
-
-enum class Task
-{
-    Form,
-    Email
-};
-
-constexpr std::array<Task, 2> TASK_SEQUENCE = {Task::Form, Task::Email};
-
-// 2x2 latin square
-constexpr std::array<std::array<InputDevice, 2>, 2> COUNTERBALANCING_SEQUENCE = {
-    {{InputDevice::Mouse, InputDevice::LeapMotion}, {InputDevice::LeapMotion, InputDevice::Mouse}}};
-
-struct StudyState
-{
-    bool isStudyStarted;
-    bool isTutorialDone;
-    bool isStudyDone;
-    Logging::Logger logger;
-    int userId;
-    int counterbalancingIndex;
-    int currentTaskIndex;
-    int currentDeviceIndex;
-};
-
-class EventDispatcher
-{
-   public:
-    void WaitEvent(httplib::DataSink& sink)
-    {
-        std::unique_lock<std::mutex> lock(queueMutex);
-        cv.wait(lock, [this] { return queueSize > 0 || programTerminated; });
-        // TODO: there's still probably a race condition i didn't account for
-        // lock is reacquired...
-        if (programTerminated)
-            return;
-
-        std::string message = messageQueue.front();
-        sink.write(message.c_str(), message.length());
-        messageQueue.pop();
-        queueSize = messageQueue.size();
-        // lock is released
-    }
-
-    void SendEvent(const std::string& newMessage)
-    {
-        if (programTerminated)
-            return;
-
-        std::lock_guard<std::mutex> lock(queueMutex);
-        std::stringstream ss;
-        ss << "id: " << eventId.load() << "\n" << newMessage;
-        messageQueue.push(ss.str());
-        queueSize = messageQueue.size();
-        eventId++;
-        cv.notify_all();
-    }
-
-    void ShutDown()
-    {
-        programTerminated = true;
-        cv.notify_all();
-    }
-
-   private:
-    std::mutex queueMutex;
-    std::condition_variable cv;
-    std::queue<std::string> messageQueue;
-    std::atomic<int> eventId{0};
-    std::atomic<int> queueSize{0};
-    std::atomic<bool> programTerminated{false};
-};
-
-Expected<int, Helpers::ParseError> ParseInt(const std::string& value, int min, int max)
-{
-    // TODO: constexpr initialization doesn't work lol
-    static const Expected<int, Helpers::ParseError> err(
-        Helpers::ParseError::None);  // TODO: better error
-
-    try
-    {
-        int val = std::stoi(value);
-        if (val < min || val > max)
-            return err;
-
-        return Expected<int, Helpers::ParseError>(std::move(val));  // TODO: ugly
-    }
-    catch (const std::exception& ex)
-    {
-        return err;
-    }
-}
-
-std::mutex heartbeatMutex;
-std::condition_variable heartbeatCV;
-std::atomic<bool> killHeartbeat{false};
-
-void HeartbeatLoop(std::atomic<bool>& isRunning, EventDispatcher& dispatcher,
-                   const int intervalSeconds)
-{
-    std::cout << "Starting SSE heartbeat thread..." << std::endl;
-    while (isRunning)
-    {
-        dispatcher.SendEvent("data: keep alive\r\n\r\n");
-        // std::this_thread::sleep_for(std::chrono::seconds(intervalSeconds));
-        std::unique_lock<std::mutex> lock(heartbeatMutex);
-        heartbeatCV.wait_for(lock, std::chrono::seconds(intervalSeconds),
-                             [] { return killHeartbeat.load(); });
-    }
-}
-
 const std::string baseDir = "Logs";
 
 void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
 {
     std::cout << "Starting HTTP thread..." << std::endl;
 
-    httplib::Server server;
-    StudyState state{};
-    HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
-    HTML::HTMLTemplate tutorialTemplate("HTMLTemplates/tutorialPage.html");
-    HTML::HTMLTemplate endTemplate("HTMLTemplates/endPage.html");
-    HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
-    HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
-
     if (!std::filesystem::exists(baseDir))
         std::filesystem::create_directory(baseDir);
 
+    httplib::Server server;
     if (!server.set_mount_point("/", "./www/"))
     {
         std::cout << "Unable to set mount point" << std::endl;
@@ -195,47 +43,45 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         return;
     }
 
-    EventDispatcher dispatcher;
+    // Set up objects for use by the server
+    Helpers::StudyState state{};
+    Helpers::UserIDLock userIdLock("ids.lock");
+
+    HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
+    HTML::HTMLTemplate tutorialTemplate("HTMLTemplates/tutorialPage.html");
+    HTML::HTMLTemplate endTemplate("HTMLTemplates/endPage.html");
+    HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
+    HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
+
+    Helpers::EventDispatcher dispatcher;
     auto r_isRunning = std::ref(isRunning);
     auto r_dispatcher = std::ref(dispatcher);
-    std::thread heartbeatThread(HeartbeatLoop, r_isRunning, r_dispatcher, 3);
+    std::thread heartbeatThread(Helpers::HeartbeatLoop, r_isRunning, r_dispatcher, 3);
 
-    server.Post(
-        "/eventPusherTester",
-        [&dispatcher](const Req& req, Res& res)
-        {
-            std::cout << "sending event..." << std::endl;
-            dispatcher.SendEvent("event: proceed\ndata: test from eventPusherTester\r\n\r\n");
-        });
-
-    server.Get("/eventPusher",
-               [&dispatcher](const Req& req, Res& res)
-               {
-                   std::cout << "Got request for eventPusher" << std::endl;
-                   res.set_chunked_content_provider(
-                       "text/event-stream",
-                       [&dispatcher](size_t offset, httplib::DataSink& sink)
-                       {
-                           dispatcher.WaitEvent(sink);
-                           return true;
-                       });
-               });
+    // Declare all the lambdas used to service HTTP requests
+    auto eventPusherHandler = [&dispatcher](const Req& req, Res& res)
+    {
+        std::cout << "Got request for eventPusher" << std::endl;
+        res.set_chunked_content_provider("text/event-stream",
+                                         [&dispatcher](size_t offset, httplib::DataSink& sink)
+                                         {
+                                             dispatcher.WaitEvent(sink);
+                                             return true;
+                                         });
+    };
 
     auto quitHandler = [&server, &isRunning, &dispatcher](const Req& req, Res& res)
     {
         std::cout << "Server got shutdown signal, shutting down threads..." << std::endl;
         dispatcher.ShutDown();
         {
-            std::lock_guard<std::mutex> lock(heartbeatMutex);
-            killHeartbeat = true;
-            heartbeatCV.notify_all();
+            std::lock_guard<std::mutex> lock(Helpers::heartbeatMutex);
+            Helpers::killHeartbeat = true;
+            Helpers::heartbeatCV.notify_all();
         }
         server.stop();
         isRunning.store(false);
     };
-    server.Post("/quit", quitHandler);
-
-    Helpers::UserIDLock userIdLock("ids.lock");
 
     auto startHandler =
         [&state, &isLeapDriverActive, &dispatcher, &userIdLock](const Req& req, Res& res)
@@ -271,14 +117,13 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                       << " (counterbalancing index=" << state.counterbalancingIndex << ")"
                       << std::endl;
 
-            dispatcher.SendEvent("event: proceed\ndata: starting tutorial\r\n\r\n");
+            dispatcher.SendEvent("event: proceed\r\ndata: starting tutorial\r\n\r\n");
 
             res.status = 200;  // 200 OK
             return;
         }
-        parseErrorHandler(req, res, result.Error());
+        Helpers::parseErrorHandler(req, res, result.Error());
     };
-    server.Post("/start", startHandler);
 
     auto tutorialProgressHandler = [&state, &dispatcher](const Req& req, Res& res)
     {
@@ -293,7 +138,6 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
 
         dispatcher.SendEvent("event: proceed\r\ndata: starting user study\r\n\r\n");
     };
-    server.Post("/acknowledgeTutorial", tutorialProgressHandler);
 
     auto formTestHandler = [&formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
                             &endTemplate](const Req& req, Res& res)
@@ -351,7 +195,6 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             res.status = 404;
         }
     };
-    server.Get("/test", formTestHandler);
 
     auto formHandler = [&state, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
                         &endTemplate, &isLeapDriverActive](const Req& req, Res& res)
@@ -380,13 +223,14 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         Input::Mouse::MoveAbsolute(100, 100);
 
         std::string device;
-        switch (COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex][state.currentDeviceIndex])
+        switch (Helpers::COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex]
+                                                  [state.currentDeviceIndex])
         {
-            case InputDevice::Mouse:
+            case Helpers::InputDevice::Mouse:
                 device = "Mouse";
                 isLeapDriverActive.store(false);
                 break;
-            case InputDevice::LeapMotion:
+            case Helpers::InputDevice::LeapMotion:
                 device = "Leap Motion";
                 isLeapDriverActive.store(true);
                 break;
@@ -399,11 +243,11 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         std::vector<std::string> strings;
         strings.push_back(device);
         strings.push_back(std::to_string(state.currentTaskIndex + 1));
-        strings.push_back(std::to_string(TASK_SEQUENCE.size()));
+        strings.push_back(std::to_string(Helpers::TASK_SEQUENCE.size()));
         using namespace Helpers::StringPools;
-        switch (TASK_SEQUENCE[state.currentTaskIndex])
+        switch (Helpers::TASK_SEQUENCE[state.currentTaskIndex])
         {
-            case Task::Form:
+            case Helpers::Task::Form:
                 strings.emplace(strings.begin(), device);
                 strings.push_back(SelectRandom(Names));
                 strings.push_back(SelectRandom(EmailAddresses));
@@ -414,7 +258,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                 formTemplate.Substitute(strings);
                 res.set_content(formTemplate.GetSubstitution(), "text/html");
                 break;
-            case Task::Email:
+            case Helpers::Task::Email:
                 strings.push_back(SelectRandom(EmailAddresses));
                 strings.push_back(SelectRandom(EmailBodyText));
                 emailTemplate.Substitute(strings);
@@ -426,7 +270,6 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                 break;
         }
     };
-    server.Get("/form", formHandler);
 
     // logging only
     auto eventsClickHandler = [&state](const Req& req, Res& res)
@@ -436,13 +279,12 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         {
             for (auto event : result.Value().data)
                 state.logger.Log(event);
-            printRequest(req, res);
+            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
-        parseErrorHandler(req, res, result.Error());
+        Helpers::parseErrorHandler(req, res, result.Error());
     };
-    server.Post("/events/click", eventsClickHandler);
 
     // logging only
     auto eventsKeystrokeHandler = [&state](const Req& req, Res& res)
@@ -452,13 +294,12 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         {
             for (auto event : result.Value().data)
                 state.logger.Log(event);
-            printRequest(req, res);
+            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
-        parseErrorHandler(req, res, result.Error());
+        Helpers::parseErrorHandler(req, res, result.Error());
     };
-    server.Post("/events/keystroke", eventsKeystrokeHandler);
 
     // logging only, relevant state is client-side only
     auto eventsFieldHandler = [&state](const Req& req, Res& res)
@@ -467,15 +308,13 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         if (result.HasValue())
         {
             state.logger.Log(result.Value().data);
-            printRequest(req, res);
+            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
-        parseErrorHandler(req, res, result.Error());
+        Helpers::parseErrorHandler(req, res, result.Error());
     };
-    server.Post("/events/field", eventsFieldHandler);
 
-    // we actually need to do state updates here
     auto eventsTaskHandler = [&state, &isLeapDriverActive, &dispatcher](const Req& req, Res& res)
     {
         if (state.isStudyDone)
@@ -490,28 +329,22 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             state.logger.Log(result.Value().data);
 
             state.currentTaskIndex++;
-            if (state.currentTaskIndex == TASK_SEQUENCE.size())
+            if (state.currentTaskIndex == Helpers::TASK_SEQUENCE.size())
             {
                 state.currentTaskIndex = 0;
                 state.currentDeviceIndex++;
             }
 
             if (state.currentDeviceIndex ==
-                COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex].size())
+                Helpers::COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex].size())
             {
                 state.isStudyDone = true;
                 res.status = 200;
-                dispatcher.SendEvent("event: proceed\ndata: study is done\r\n\r\n");
+                dispatcher.SendEvent("event: proceed\r\ndata: study is done\r\n\r\n");
                 return;
             }
 
-            // TODO: need to test this to make sure the device (de)activation works
-            auto deviceSequence = COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex];
-            auto activeDevice = deviceSequence[state.currentDeviceIndex];
-            isLeapDriverActive.store(activeDevice == InputDevice::LeapMotion);
-            std::cout << "LEAP MOTION ACTIVE?: " << isLeapDriverActive << std::endl;
-
-            dispatcher.SendEvent("event: proceed\ndata: moving on to next study phase\r\n\r\n");
+            dispatcher.SendEvent("event: proceed\r\ndata: moving on to next study phase\r\n\r\n");
 
             std::stringstream ss;
             ss << "Study state:"
@@ -522,46 +355,30 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                << "\n    currentDeviceIndex: " << state.currentDeviceIndex << std::endl;
             std::cout << ss.str();
 
-            printRequest(req, res);
+            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
-        parseErrorHandler(req, res, result.Error());
+        Helpers::parseErrorHandler(req, res, result.Error());
     };
+
+    // Hook up the lambdas to the server and begin listening
+    server.set_error_handler(Helpers::errorHandler);
+    server.set_exception_handler(Helpers::exceptionHandler);
+
+    server.Get("/form", formHandler);
+    server.Get("/test", formTestHandler);
+    server.Get("/eventPusher", eventPusherHandler);
+
+    server.Post("/quit", quitHandler);
+    server.Post("/start", startHandler);
+    server.Post("/acknowledgeTutorial", tutorialProgressHandler);
+    server.Post("/events/click", eventsClickHandler);
+    server.Post("/events/keystroke", eventsKeystrokeHandler);
+    server.Post("/events/field", eventsFieldHandler);
     server.Post("/events/task", eventsTaskHandler);
 
-    server.set_error_handler(
-        [](const Req& req, Res& res)
-        {
-            std::stringstream ss;
-            ss << "<h1>Error " << res.status << "</h1>";
-            res.set_content(ss.str(), "text/html");
-        });
-
-    server.set_exception_handler(
-        [](const Req& req, Res& res, std::exception_ptr exp)
-        {
-            std::stringstream ss;
-            ss << "<h1>Error 500</h1><p>";
-            try
-            {
-                std::rethrow_exception(exp);
-            }
-            catch (std::exception& ex)
-            {
-                ss << ex.what();
-            }
-            catch (...)
-            {
-                ss << "Unknown exception (not of type std::exception) was thrown.";
-            }
-            ss << "</p>";
-
-            res.set_content(ss.str(), "text/html");
-        });
-
     server.listen("localhost", 5000);
-    std::cout << "server.listen exited" << std::endl;
     heartbeatThread.join();
 
     std::cout << "Shutting down HTTP thread..." << std::endl;
