@@ -366,7 +366,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     server.set_error_handler(Helpers::errorHandler);
     server.set_exception_handler(Helpers::exceptionHandler);
 
-    server.Get("/form", formHandler);
+    server.Get("/", formHandler);
     server.Get("/test", formTestHandler);
     server.Get("/eventPusher", eventPusherHandler);
 
