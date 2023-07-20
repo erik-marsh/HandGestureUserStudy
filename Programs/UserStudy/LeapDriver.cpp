@@ -15,9 +15,7 @@ using Vec3 = Math::Vector3Common;
 namespace Input
 {
 
-void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& renderables,
-                std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive,
-                std::mutex& renderableCopyMutex)
+void DriverLoop(SyncState& syncState)
 {
     std::cout << "Starting Leap Motion driver thread..." << std::endl;
 
@@ -31,22 +29,22 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
     float dxAccumulator = 0.0f;
     float dyAccumulator = 0.0f;
 
-    while (isRunning.load())
+    while (syncState.isRunning.load())
     {
         // TODO: do something else that isn't a spinlock
-        while (!isLeapDriverActive.load() && isRunning.load())
+        while (!syncState.isLeapDriverActive.load() && syncState.isRunning.load())
             ;
 
         Time frameStart = Clock::now();
 
-        LEAP_TRACKING_EVENT* leapFrame = connection.GetFrame();
+        LEAP_TRACKING_EVENT* leapFrame = syncState.connection.GetFrame();
         if (!leapFrame)
             continue;
 
         if (leapFrame->nHands == 0)
         {
-            std::lock_guard<std::mutex> lock(renderableCopyMutex);
-            renderables = Visualization::Renderables{};
+            std::lock_guard<std::mutex> lock(syncState.renderableCopyMutex);
+            syncState.renderables = Renderables{};
         }
         else
         {
@@ -70,14 +68,14 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
 
             Leap::ProcessedHandState outState = Leap::ProcessHandState(inState);
             {
-                std::lock_guard<std::mutex> lock(renderableCopyMutex);
-                renderables.hasHand = true;
-                renderables.hand = hand;
-                renderables.didClick = outState.isInClickPose;
-                renderables.cursorDirX = outState.cursorDirectionX;
-                renderables.cursorDirY = outState.cursorDirectionY;
-                renderables.avgFingerDirX = outState.averageFingerDirectionX;
-                renderables.avgFingerDirY = outState.averageFingerDirectionY;
+                std::lock_guard<std::mutex> lock(syncState.renderableCopyMutex);
+                syncState.renderables.hasHand = true;
+                syncState.renderables.hand = hand;
+                syncState.renderables.didClick = outState.isInClickPose;
+                syncState.renderables.cursorDirX = outState.cursorDirectionX;
+                syncState.renderables.cursorDirY = outState.cursorDirectionY;
+                syncState.renderables.avgFingerDirX = outState.averageFingerDirectionX;
+                syncState.renderables.avgFingerDirY = outState.averageFingerDirectionY;
             }
 
             // do the input finally

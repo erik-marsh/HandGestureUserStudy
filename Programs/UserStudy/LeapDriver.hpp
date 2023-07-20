@@ -1,15 +1,10 @@
 #pragma once
 
-#include <Input/LeapConnection.hpp>
-#include <atomic>
-
-#include "Visualizer.hpp"
+#include "SyncState.hpp"
 
 namespace Input
 {
 
-void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& renderables,
-                std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive,
-                std::mutex& renderableCopyMutex);
+void DriverLoop(SyncState& syncState);
 
 }

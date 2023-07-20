@@ -28,7 +28,7 @@ using Res = httplib::Response;
 
 const std::string baseDir = "Logs";
 
-void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive)
+void HttpServerLoop(SyncState& syncState)
 {
     std::cout << "Starting HTTP thread..." << std::endl;
 
@@ -39,7 +39,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     if (!server.set_mount_point("/", "./www/"))
     {
         std::cout << "Unable to set mount point" << std::endl;
-        isRunning.store(false);
+        syncState.isRunning.store(false);
         return;
     }
 
@@ -54,7 +54,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
 
     Helpers::EventDispatcher dispatcher;
-    auto r_isRunning = std::ref(isRunning);
+    auto r_isRunning = std::ref(syncState.isRunning);
     auto r_dispatcher = std::ref(dispatcher);
     std::thread heartbeatThread(Helpers::HeartbeatLoop, r_isRunning, r_dispatcher, 3);
 
@@ -70,7 +70,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
                                          });
     };
 
-    auto quitHandler = [&server, &isRunning, &dispatcher](const Req& req, Res& res)
+    auto quitHandler = [&server, &syncState, &dispatcher](const Req& req, Res& res)
     {
         std::cout << "Server got shutdown signal, shutting down threads..." << std::endl;
         dispatcher.ShutDown();
@@ -80,11 +80,10 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
             Helpers::heartbeatCV.notify_all();
         }
         server.stop();
-        isRunning.store(false);
+        syncState.isRunning.store(false);
     };
 
-    auto startHandler =
-        [&state, &isLeapDriverActive, &dispatcher, &userIdLock](const Req& req, Res& res)
+    auto startHandler = [&state, &dispatcher, &userIdLock](const Req& req, Res& res)
     {
         if (state.isStudyStarted)
         {
@@ -197,7 +196,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
     };
 
     auto formHandler = [&state, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
-                        &endTemplate, &isLeapDriverActive](const Req& req, Res& res)
+                        &endTemplate, &syncState](const Req& req, Res& res)
     {
         if (!state.isStudyStarted)
         {
@@ -208,7 +207,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         if (!state.isTutorialDone)
         {
             res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
-            isLeapDriverActive.store(true);
+            syncState.isLeapDriverActive.store(true);
             return;
         }
 
@@ -228,15 +227,15 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         {
             case Helpers::InputDevice::Mouse:
                 device = "Mouse";
-                isLeapDriverActive.store(false);
+                syncState.isLeapDriverActive.store(false);
                 break;
             case Helpers::InputDevice::LeapMotion:
                 device = "Leap Motion";
-                isLeapDriverActive.store(true);
+                syncState.isLeapDriverActive.store(true);
                 break;
             default:
                 device = "<UNKNOWN>";
-                isLeapDriverActive.store(false);
+                syncState.isLeapDriverActive.store(false);
                 break;
         }
 
@@ -315,7 +314,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
-    auto eventsTaskHandler = [&state, &isLeapDriverActive, &dispatcher](const Req& req, Res& res)
+    auto eventsTaskHandler = [&state, &dispatcher](const Req& req, Res& res)
     {
         if (state.isStudyDone)
         {

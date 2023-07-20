@@ -18,8 +18,7 @@ constinit const char* const redMsg =
 constinit const char* const coneMsg1 = "The cones correspond to the gesture recognition poses.";
 constinit const char* const coneMsg2 =
     "When your hand pose is being recognized (the tip of the blue cylinder";
-constinit const char* const coneMsg3 =
-    "is in the cone), the corresponding cone will turn green.";
+constinit const char* const coneMsg3 = "is in the cone), the corresponding cone will turn green.";
 constinit const char* const blackMsg = "The gray box indicates what will happen to the cursor.";
 constinit const char* const purpleMsg1 =
     "The purple line shows the average direction of your fingertips,";
@@ -47,8 +46,7 @@ void MakeDirectionalTriangle(int x, int y, int rectCenterX, int rectCenterY, int
     DrawTriangle(t3, t1, t2, color);
 }
 
-void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning,
-                std::mutex& renderableCopyMutex)
+void RenderLoop(SyncState& syncState)
 {
     std::cout << "Starting rendering thread..." << std::endl;
 
@@ -93,11 +91,11 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning,
     std::stringstream ss;
     Renderables localRenderables{};  // Zero-initialization works for an "invalid state"
 
-    while (isRunning.load())
+    while (syncState.isRunning.load())
     {
         {
-            std::lock_guard<std::mutex> lock(renderableCopyMutex);
-            localRenderables = renderables;  // Renderables struct is POD
+            std::lock_guard<std::mutex> lock(syncState.renderableCopyMutex);
+            localRenderables = syncState.renderables;  // Renderables struct is POD
         }
 
         const bool isLeft = localRenderables.hand.type == eLeapHandType_Left;
@@ -143,27 +141,38 @@ void RenderLoop(Renderables& renderables, std::atomic<bool>& isRunning,
         MakeDirectionalTriangle(cursorDirX, cursorDirY, rectCenterX, rectCenterY, 10, YELLOW);
         MakeDirectionalTriangle(fingerDirX, fingerDirY, rectCenterX, rectCenterY, 5, PURPLE);
 
+        if (!syncState.isLeapDriverActive)
+        {
+            DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, DARKGRAY);
+            constexpr int posX = (SCREEN_WIDTH / 2) - 300;
+            constexpr int posY = (SCREEN_HEIGHT / 2) - fontSize;
+            DrawText("Leap Motion driver is inactive.", posX, posY, 2 * fontSize, WHITE);
+        }
+
         EndMode2D();
 
-        ss.str("");  // clear stream
-        ss << "Active hand.....: "
-           << (localRenderables.hasHand ? (isLeft ? "Left" : "Right") : "None") << "\n"
-           << "Clicked?........: " << (localRenderables.didClick ? "Yes" : "No");
-        DrawText(ss.str().c_str(), lineIndent + (3 * SCREEN_WIDTH / 4),
-                 SCREEN_HEIGHT - (3 * lineHeight), fontSize, BLACK);
+        if (syncState.isLeapDriverActive)
+        {
+            ss.str("");  // clear stream
+            ss << "Active hand.....: "
+               << (localRenderables.hasHand ? (isLeft ? "Left" : "Right") : "None") << "\n"
+               << "Clicked?........: " << (localRenderables.didClick ? "Yes" : "No");
+            DrawText(ss.str().c_str(), lineIndent + (3 * SCREEN_WIDTH / 4),
+                     SCREEN_HEIGHT - (3 * lineHeight), fontSize, BLACK);
 
-        DrawText(blueMsg, lineIndent, lineHeight, fontSize, BLUE);
-        DrawText(redMsg, lineIndent, lineHeight * 3, fontSize, RED);
-        DrawText(blackMsg, lineIndent, lineHeight * 6, fontSize, BLACK);
-        DrawText(purpleMsg1, 2 * lineIndent, lineHeight * 8, fontSize, PURPLE);
-        DrawText(purpleMsg2, 2 * lineIndent, lineHeight * 10, fontSize, PURPLE);
-        DrawText(yellowMsg, 2 * lineIndent, lineHeight * 12, fontSize, YELLOW);
+            DrawText(blueMsg, lineIndent, lineHeight, fontSize, BLUE);
+            DrawText(redMsg, lineIndent, lineHeight * 3, fontSize, RED);
+            DrawText(blackMsg, lineIndent, lineHeight * 6, fontSize, BLACK);
+            DrawText(purpleMsg1, 2 * lineIndent, lineHeight * 8, fontSize, PURPLE);
+            DrawText(purpleMsg2, 2 * lineIndent, lineHeight * 10, fontSize, PURPLE);
+            DrawText(yellowMsg, 2 * lineIndent, lineHeight * 12, fontSize, YELLOW);
 
-        DrawText(coneMsg1, (SCREEN_WIDTH / 2) + lineIndent, lineHeight, fontSize, BLACK);
-        DrawText(coneMsg2, (SCREEN_WIDTH / 2) + lineIndent, lineHeight * 3, fontSize, BLACK);
-        DrawText(coneMsg3, (SCREEN_WIDTH / 2) + lineIndent, lineHeight * 5, fontSize, BLACK);
+            DrawText(coneMsg1, (SCREEN_WIDTH / 2) + lineIndent, lineHeight, fontSize, BLACK);
+            DrawText(coneMsg2, (SCREEN_WIDTH / 2) + lineIndent, lineHeight * 3, fontSize, BLACK);
+            DrawText(coneMsg3, (SCREEN_WIDTH / 2) + lineIndent, lineHeight * 5, fontSize, BLACK);
 
-        DrawText("Cursor movement:", 10, rectY - lineHeight, fontSize, WHITE);
+            DrawText("Cursor movement:", 10, rectY - lineHeight, fontSize, WHITE);
+        }
         EndDrawing();
     }
 

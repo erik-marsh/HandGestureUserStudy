@@ -1,10 +1,10 @@
 #pragma once
 
-#include <atomic>
+#include "SyncState.hpp"
 
 namespace Http
 {
 
-void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDriverActive);
+void HttpServerLoop(SyncState& syncState);
 
 }
