@@ -534,7 +534,7 @@ void HttpServerLoop(std::atomic<bool>& isRunning, std::atomic<bool>& isLeapDrive
         [](const Req& req, Res& res)
         {
             std::stringstream ss;
-            ss << "<h1>Error " << res.status << "/<h1>";
+            ss << "<h1>Error " << res.status << "</h1>";
             res.set_content(ss.str(), "text/html");
         });
 
