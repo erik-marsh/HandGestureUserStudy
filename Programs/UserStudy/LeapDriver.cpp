@@ -94,7 +94,7 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
             else if (!outState.isInClickPose)
             {
                 // originally this speed was 2px per every 16.67ms (60Hz)
-                constexpr float speed = 0.2f;
+                constexpr float speed = 0.4f;
                 dxAccumulator += outState.cursorDirectionX * speed;
                 dyAccumulator += outState.cursorDirectionY * speed * -1.0f;
 
