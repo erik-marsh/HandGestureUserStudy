@@ -43,9 +43,14 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
         if (!leapFrame)
             continue;
 
-        // yes, we only want the most recent hand
-        if (leapFrame->nHands > 0)
+        if (leapFrame->nHands == 0)
         {
+            std::lock_guard<std::mutex> lock(renderableCopyMutex);
+            renderables = Visualization::Renderables{};
+        }
+        else
+        {
+            // yes, we only want the most recent hand
             LEAP_HAND hand = leapFrame->pHands[leapFrame->nHands - 1];
 
             Leap::UnprocessedHandState inState{};
@@ -108,11 +113,6 @@ void DriverLoop(Leap::LeapConnection& connection, Visualization::Renderables& re
                 // click pose and movement pose are mutually exclusive
                 isClickDisengaged = true;
             }
-        }
-        else
-        {
-            std::lock_guard<std::mutex> lock(renderableCopyMutex);
-            renderables = Visualization::Renderables{};
         }
 
         Time frameEnd = Clock::now();
