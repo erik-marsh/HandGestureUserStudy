@@ -1,5 +1,8 @@
 #include <LeapC.h>
 
+#include <Input/SimulatedMouse.hpp>
+#include <cstring>
+#include <iostream>
 #include <thread>
 
 #include "HttpServer.hpp"
@@ -8,7 +11,49 @@
 #include "SyncState.hpp"
 #include "Visualizer.hpp"
 
-int main()
+int PrintHelp(bool isBadUsage);
+int RunMouseConfigure();
+int RunUserStudy();
+
+int main(int argc, char** argv)
+{
+    if (argc > 2)
+        return PrintHelp(true);
+
+    if (argc == 2)
+    {
+        if (!std::strcmp(argv[1], "--help") || !std::strcmp(argv[1], "-h"))
+            return PrintHelp(false);
+        if (!std::strcmp(argv[1], "--configure-mouse") || !std::strcmp(argv[1], "-c"))
+            return RunMouseConfigure();
+        else
+            return PrintHelp(true);
+    }
+
+    return RunUserStudy();
+}
+
+int PrintHelp(bool isBadUsage)
+{
+    std::cout
+        << "Usage: .\\handGestureUserStudy <params>\n"
+        << "Valid parameters:\n"
+        << "    <no parameters> -> Run user study as normal\n"
+        << "    --configure-mouse, -c -> Moves the mouse to the location that it will be reset "
+        << "to during the user study.\n"
+        << "                         The monitor that the mouse moves to is the monitor the "
+        << "browser window should be on.\n"
+        << "    --help, -h -> Shows this message." << std::endl;
+    return static_cast<int>(isBadUsage);
+}
+
+int RunMouseConfigure()
+{
+    Input::Mouse::MoveAbsolute(100, 100);
+    return 0;
+}
+
+int RunUserStudy()
 {
     Input::Leap::LeapConnection connection;
     while (!connection.IsConnected())

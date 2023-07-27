@@ -7,6 +7,11 @@ Hopefully this thing will get published soon/at all...
 ## Notes for whoever wants to run this
 
 * A computer with two monitors is highly, highly recommended.
+* This software has only been tested on 1080p monitors,
+  so 1080p or greater resolution monitors are recommended.
+* To figure out which monitor the browser needs to be placed on,
+  run `.\handGestureUserStudy --configure-mouse`.
+  This will place your mouse on the correct monitor for the browser.
 * Each participant needs an ID number. This is just the number of participants that have been run through.
 * Participant ID is important: it is used for counterbalancing and writing the log files.
 * There are some files/directories of interest that are created
