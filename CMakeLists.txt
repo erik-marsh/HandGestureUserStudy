@@ -138,7 +138,7 @@ add_executable(
     Math/Vector3Common.cpp
     Programs/UserStudy/HttpServer.cpp
     Programs/UserStudy/LeapDriver.cpp
-    Programs/UserStudy/ThreadingTest.cpp
+    Programs/UserStudy/Main.cpp
     Programs/UserStudy/Visualizer.cpp
     Programs/UserStudy/Logging.cpp
     Visualization/RaylibVisuals.cpp)
