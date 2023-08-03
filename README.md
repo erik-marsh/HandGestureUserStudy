@@ -4,7 +4,7 @@ This is the software that drives the user study for the paper
 *Hand-off: Evaluating mice and optical hand trackers in typing-dominant environments* (working title).
 Hopefully this thing will get published soon/at all...
 
-## Notes for whoever wants to run this
+## Notes for the researchers
 
 * A computer with two monitors is highly, highly recommended.
 * This software has only been tested on 1080p monitors,
@@ -66,7 +66,7 @@ LeapSDK/
     ThirdPartyNotices.md
 ```
 
-## Building
+### Compiling
 
 After gathering the dependencies, run the following commands in the root of the repository.
 ```powershell
