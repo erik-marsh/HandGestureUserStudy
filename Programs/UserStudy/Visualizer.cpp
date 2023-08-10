@@ -88,6 +88,20 @@ void RenderLoop(SyncState& syncState)
     const auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
     const auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
 
+    // initialize models
+    Model leapModel = LoadModel("Models/leap.glb");
+    Matrix leapScale = MatrixScale(0.15f, 0.15f, 0.15f);
+    Matrix leapRotation = MatrixRotateXYZ({Math::_PI / 2.0f, 0.0f, Math::_PI / 2.0f});
+    Matrix leapTranslate = MatrixTranslate(0.0f, 0.0f, 20.0f);
+    leapModel.transform = MatrixMultiply(leapTranslate, MatrixMultiply(leapRotation, leapScale));
+
+    Model desktopModel = LoadModel("Models/comp.glb");
+    Matrix desktopScale = MatrixScale(0.05f, 0.05f, 0.05f);
+    Matrix desktopRotation = MatrixIdentity();
+    Matrix desktopTranslate = MatrixTranslate(0.0f, -50.0f, -30.0f);
+    desktopModel.transform =
+        MatrixMultiply(desktopTranslate, MatrixMultiply(desktopRotation, desktopScale));
+
     std::stringstream ss;
     Renderables localRenderables{};  // Zero-initialization works for an "invalid state"
 
@@ -108,6 +122,8 @@ void RenderLoop(SyncState& syncState)
         ClearBackground(LIGHTGRAY);
 
         BeginMode3D(camera3D);
+        DrawModel(leapModel, VECTOR_ORIGIN, 1.0f, WHITE);
+        DrawModel(desktopModel, VECTOR_ORIGIN, 1.0f, WHITE);
         DrawHand(localRenderables.hand);
 
         Color toleranceColorX =

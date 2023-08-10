@@ -54,6 +54,15 @@ add_custom_command(
     BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/HTMLTemplates
 )
 
+add_custom_target(3dModels)
+add_custom_command(
+    TARGET 3dModels
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/Models
+            ${CMAKE_BINARY_DIR}/$<CONFIG>/Models
+    BYPRODUCTS ${CMAKE_BINARY_DIR}/$<CONFIG>/Models
+)
+
 # ==================================================
 # ========== raylib library configuration ==========
 # ==================================================
@@ -143,7 +152,7 @@ add_executable(
     Programs/UserStudy/Logging.cpp
     Visualization/RaylibVisuals.cpp)
 
-add_dependencies(${MAIN_EXECUTABLE_NAME} libLeapC staticFiles htmlTemplates)
+add_dependencies(${MAIN_EXECUTABLE_NAME} libLeapC staticFiles htmlTemplates 3dModels)
 
 target_include_directories(
     ${MAIN_EXECUTABLE_NAME} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB} ${INCLUDE_RAYLIB}
