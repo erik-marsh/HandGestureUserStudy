@@ -84,28 +84,28 @@ void RenderLoop(SyncState& syncState)
     constexpr float toleranceConeLength = 2.0f;
     const float outerRadius =
         toleranceConeLength * std::tanf(Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS);
-    const auto positiveX = Vector3(toleranceConeLength, 0.0f, 0.0f);
-    const auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
-    const auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
+    constexpr auto positiveX = Vector3(toleranceConeLength, 0.0f, 0.0f);
+    constexpr auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
+    constexpr auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
 
     constexpr Color clearColor = {200, 200, 200, 255};  // LIGHTGRAY
 
     // initialize models
     Model leapModel = LoadModel("Models/leap.glb");
-    Matrix leapTranslate = MatrixTranslate(0.0f, -2.5f, 0.0f);
-    Matrix leapScale = MatrixScale(0.15f, 0.15f, 0.15f);
-    Matrix leapRotation = MatrixRotateXYZ({Math::_PI / 2.0f, 0.0f, Math::_PI / 2.0f});
+    const Matrix leapTranslate = MatrixTranslate(0.0f, -2.5f, 0.0f);
+    const Matrix leapScale = MatrixScale(0.15f, 0.15f, 0.15f);
+    const Matrix leapRotation = MatrixRotateXYZ({Math::_PI / 2.0f, 0.0f, Math::_PI / 2.0f});
     leapModel.transform = MatrixMultiply(leapRotation, MatrixMultiply(leapScale, leapTranslate));
 
     Model desktopModel = LoadModel("Models/comp.glb");
-    Matrix desktopTranslate = MatrixTranslate(0.0f, -2.5f, -2.5f);
-    Matrix desktopScale = MatrixScale(0.05f, 0.05f, 0.05f);
-    Matrix desktopRotation = MatrixIdentity();
+    const Matrix desktopTranslate = MatrixTranslate(0.0f, -2.5f, -2.5f);
+    const Matrix desktopScale = MatrixScale(0.05f, 0.05f, 0.05f);
+    const Matrix desktopRotation = MatrixIdentity();
     desktopModel.transform =
         MatrixMultiply(desktopRotation, MatrixMultiply(desktopScale, desktopTranslate));
 
     std::stringstream ss;
-    Renderables localRenderables{};  // Zero-initialization works for an "invalid state"
+    Renderables localRenderables{};  // Zero-initialization works well for an "invalid state"
 
     while (syncState.isRunning.load())
     {
