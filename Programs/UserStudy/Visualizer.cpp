@@ -64,6 +64,8 @@ void RenderLoop(SyncState& syncState)
     Camera2D camera2D{};
     camera2D.zoom = 1.0f;
 
+    constexpr Color clearColor = {200, 200, 200, 255};  // LIGHTGRAY
+
     // initialize 2D rendering settings
     constexpr int rectCenterX = 100;
     constexpr int rectCenterY = SCREEN_HEIGHT - 100;
@@ -80,15 +82,15 @@ void RenderLoop(SyncState& syncState)
     constexpr int lineIndent = 20;
 
     // initialize tolerance cone settings
-    constexpr unsigned char toleranceConeOpacity = 125;
-    constexpr float toleranceConeLength = 2.0f;
-    const float outerRadius =
-        toleranceConeLength * std::tanf(Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS);
-    constexpr auto positiveX = Vector3(toleranceConeLength, 0.0f, 0.0f);
-    constexpr auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
-    constexpr auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
+    constexpr unsigned char tcOpacity = 125;
+    constexpr Color tcActive = {0, 228, 48, tcOpacity};
+    constexpr Color tcInactive = {0, 0, 0, tcOpacity};
 
-    constexpr Color clearColor = {200, 200, 200, 255};  // LIGHTGRAY
+    constexpr float tcLength = 2.0f;
+    constexpr Vector3 positiveX = {tcLength, 0.0f, 0.0f};
+    constexpr Vector3 negativeX = {-tcLength, 0.0f, 0.0f};
+    constexpr Vector3 negativeY = {0.0f, -tcLength, 0.0f};
+    const float outerRadius = tcLength * std::tanf(Input::Leap::TOLERANCE_CONE_ANGLE_RADIANS);
 
     // initialize models
     Model leapModel = LoadModel("Models/leap.glb");
@@ -105,18 +107,17 @@ void RenderLoop(SyncState& syncState)
         MatrixMultiply(desktopRotation, MatrixMultiply(desktopScale, desktopTranslate));
 
     std::stringstream ss;
-    Renderables localRenderables{};  // Zero-initialization works well for an "invalid state"
+    Renderables rend{};  // Zero-initialization works well for an "invalid state"
 
     while (syncState.isRunning.load())
     {
         {
             std::lock_guard<std::mutex> lock(syncState.renderableCopyMutex);
-            localRenderables = syncState.renderables;  // Renderables struct is POD
+            rend = syncState.renderables;  // Renderables struct is POD
         }
 
-        const bool isLeft = localRenderables.hand.type == eLeapHandType_Left;
-        const bool hasMovement =
-            localRenderables.cursorDirX != 0.0f || localRenderables.cursorDirY != 0.0f;
+        const bool isLeft = rend.hand.type == eLeapHandType_Left;
+        const bool hasMovement = rend.cursorDirX != 0.0f || rend.cursorDirY != 0.0f;
 
         UpdateCamera(camera3D);
 
@@ -127,32 +128,26 @@ void RenderLoop(SyncState& syncState)
         DrawModel(leapModel, VECTOR_ORIGIN, 1.0f, WHITE);
         DrawModel(desktopModel, VECTOR_ORIGIN, 1.0f, WHITE);
         DrawPlane({0.0f, -2.5f, 0.0f}, VECTOR_BASIS_K, VECTOR_BASIS_I, WHITE);
-        DrawHand(localRenderables.hand);
+        DrawHand(rend.hand);
 
-        Color toleranceColorX =
-            localRenderables.hasHand ? (isLeft && hasMovement ? GREEN : BLACK) : BLACK;
-        Color toleranceColorMX =
-            localRenderables.hasHand ? (!isLeft && hasMovement ? GREEN : BLACK) : BLACK;
-        Color toleranceColorMY = localRenderables.didClick ? GREEN : BLACK;
+        Color tcColorX =
+            rend.hasHand ? (isLeft && hasMovement ? tcActive : tcInactive) : tcInactive;
+        Color tcColorMX =
+            rend.hasHand ? (!isLeft && hasMovement ? tcActive : tcInactive) : tcInactive;
+        Color tcColorMY = rend.didClick ? tcActive : tcInactive;
 
-        toleranceColorX.a = toleranceConeOpacity;
-        toleranceColorMX.a = toleranceConeOpacity;
-        toleranceColorMY.a = toleranceConeOpacity;
-
-        DrawCylinderEx(VECTOR_ORIGIN, positiveX, 0.0f, outerRadius, 10, toleranceColorX);
-        DrawCylinderEx(VECTOR_ORIGIN, negativeX, 0.0f, outerRadius, 10, toleranceColorMX);
-        DrawCylinderEx(VECTOR_ORIGIN, negativeY, 0.0f, outerRadius, 10, toleranceColorMY);
+        DrawCylinderEx(VECTOR_ORIGIN, positiveX, 0.0f, outerRadius, 10, tcColorX);
+        DrawCylinderEx(VECTOR_ORIGIN, negativeX, 0.0f, outerRadius, 10, tcColorMX);
+        DrawCylinderEx(VECTOR_ORIGIN, negativeY, 0.0f, outerRadius, 10, tcColorMY);
         EndMode3D();
 
         BeginMode2D(camera2D);
-        const int cursorDirX = static_cast<int>(localRenderables.cursorDirX * vectorLength);
+        const int cursorDirX = static_cast<int>(rend.cursorDirX * vectorLength);
         // multiply by -1 because Y is down in screen space
-        const int cursorDirY = static_cast<int>(-1.0f * localRenderables.cursorDirY * vectorLength);
+        const int cursorDirY = static_cast<int>(-1.0f * rend.cursorDirY * vectorLength);
 
-        const int fingerDirX =
-            static_cast<int>(localRenderables.avgFingerDirX * vectorLength * 0.5f);
-        const int fingerDirY =
-            static_cast<int>(localRenderables.avgFingerDirY * vectorLength * -0.5f);
+        const int fingerDirX = static_cast<int>(rend.avgFingerDirX * vectorLength * 0.5f);
+        const int fingerDirY = static_cast<int>(rend.avgFingerDirY * vectorLength * -0.5f);
 
         DrawRectangle(rectX, rectY - (lineHeight * 1.25f), rectWidth,
                       rectHeight + (lineHeight * 1.25f), DARKGRAY);
@@ -173,9 +168,9 @@ void RenderLoop(SyncState& syncState)
         if (syncState.isLeapDriverActive)
         {
             ss.str("");  // clear stream
-            ss << "Active hand.....: "
-               << (localRenderables.hasHand ? (isLeft ? "Left" : "Right") : "None") << "\n"
-               << "Clicked?........: " << (localRenderables.didClick ? "Yes" : "No");
+            ss << "Active hand.....: " << (rend.hasHand ? (isLeft ? "Left" : "Right") : "None")
+               << "\n"
+               << "Clicked?........: " << (rend.didClick ? "Yes" : "No");
             DrawText(ss.str().c_str(), lineIndent + (3 * SCREEN_WIDTH / 4),
                      SCREEN_HEIGHT - (3 * lineHeight), fontSize, BLACK);
 
