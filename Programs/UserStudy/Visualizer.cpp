@@ -88,19 +88,21 @@ void RenderLoop(SyncState& syncState)
     const auto negativeX = Vector3(-toleranceConeLength, 0.0f, 0.0f);
     const auto negativeY = Vector3(0.0f, -toleranceConeLength, 0.0f);
 
+    constexpr Color clearColor = {200, 200, 200, 255};  // LIGHTGRAY
+
     // initialize models
     Model leapModel = LoadModel("Models/leap.glb");
+    Matrix leapTranslate = MatrixTranslate(0.0f, -2.5f, 0.0f);
     Matrix leapScale = MatrixScale(0.15f, 0.15f, 0.15f);
     Matrix leapRotation = MatrixRotateXYZ({Math::_PI / 2.0f, 0.0f, Math::_PI / 2.0f});
-    Matrix leapTranslate = MatrixTranslate(0.0f, 0.0f, 20.0f);
-    leapModel.transform = MatrixMultiply(leapTranslate, MatrixMultiply(leapRotation, leapScale));
+    leapModel.transform = MatrixMultiply(leapRotation, MatrixMultiply(leapScale, leapTranslate));
 
     Model desktopModel = LoadModel("Models/comp.glb");
+    Matrix desktopTranslate = MatrixTranslate(0.0f, -2.5f, -2.5f);
     Matrix desktopScale = MatrixScale(0.05f, 0.05f, 0.05f);
     Matrix desktopRotation = MatrixIdentity();
-    Matrix desktopTranslate = MatrixTranslate(0.0f, -50.0f, -30.0f);
     desktopModel.transform =
-        MatrixMultiply(desktopTranslate, MatrixMultiply(desktopRotation, desktopScale));
+        MatrixMultiply(desktopRotation, MatrixMultiply(desktopScale, desktopTranslate));
 
     std::stringstream ss;
     Renderables localRenderables{};  // Zero-initialization works for an "invalid state"
@@ -119,11 +121,12 @@ void RenderLoop(SyncState& syncState)
         UpdateCamera(camera3D);
 
         BeginDrawing();
-        ClearBackground(LIGHTGRAY);
+        ClearBackground(clearColor);
 
         BeginMode3D(camera3D);
         DrawModel(leapModel, VECTOR_ORIGIN, 1.0f, WHITE);
         DrawModel(desktopModel, VECTOR_ORIGIN, 1.0f, WHITE);
+        DrawPlane({0.0f, -2.5f, 0.0f}, VECTOR_BASIS_K, VECTOR_BASIS_I, WHITE);
         DrawHand(localRenderables.hand);
 
         Color toleranceColorX =
@@ -178,10 +181,10 @@ void RenderLoop(SyncState& syncState)
 
             DrawText(blueMsg, lineIndent, lineHeight, fontSize, BLUE);
             DrawText(redMsg, lineIndent, lineHeight * 3, fontSize, RED);
-            DrawText(blackMsg, lineIndent, lineHeight * 6, fontSize, BLACK);
-            DrawText(purpleMsg1, 2 * lineIndent, lineHeight * 8, fontSize, PURPLE);
-            DrawText(purpleMsg2, 2 * lineIndent, lineHeight * 10, fontSize, PURPLE);
-            DrawText(yellowMsg, 2 * lineIndent, lineHeight * 12, fontSize, YELLOW);
+            DrawText(blackMsg, lineIndent, lineHeight * 5, fontSize, BLACK);
+            DrawText(purpleMsg1, 2 * lineIndent, lineHeight * 7, fontSize, PURPLE);
+            DrawText(purpleMsg2, 2 * lineIndent, lineHeight * 9, fontSize, PURPLE);
+            DrawText(yellowMsg, 2 * lineIndent, lineHeight * 11, fontSize, YELLOW);
 
             DrawText(coneMsg1, (SCREEN_WIDTH / 2) + lineIndent, lineHeight, fontSize, BLACK);
             DrawText(coneMsg2, (SCREEN_WIDTH / 2) + lineIndent, lineHeight * 3, fontSize, BLACK);
