@@ -11,7 +11,6 @@ struct StudyState
     bool isStudyStarted;
     bool isTutorialDone;
     bool isStudyDone;
-    Logging::Logger logger;
     int userId;
     int counterbalancingIndex;
     int currentTaskIndex;

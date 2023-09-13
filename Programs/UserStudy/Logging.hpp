@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <type_traits>
+#include <mutex>
 
 // TODO: somewhere along the line, a single character at the end of the name fields gets lost
 // i have no idea why
@@ -94,6 +95,7 @@ class Logger
     int currBuffer;
     int currIndex;
     bool isFileInitialized;
+    std::mutex mutex;
 };
 
 ///////////////////////////////////////////////////////////////////////////////

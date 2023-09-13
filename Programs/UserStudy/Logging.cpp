@@ -50,6 +50,8 @@ void Logger::OpenLogFile(const std::string& filename)
 template <Loggable T>
 void Logger::Log(T event)
 {
+    std::lock_guard<std::mutex> lock(mutex);
+
     assert(hasFilename);
     std::string logLine = SerializeEvent(event);
 

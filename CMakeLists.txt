@@ -150,6 +150,7 @@ add_executable(
     Programs/UserStudy/Main.cpp
     Programs/UserStudy/Visualizer.cpp
     Programs/UserStudy/Logging.cpp
+    Programs/UserStudy/CursorLogger.cpp
     Visualization/RaylibVisuals.cpp)
 
 add_dependencies(${MAIN_EXECUTABLE_NAME} libLeapC staticFiles htmlTemplates 3dModels)

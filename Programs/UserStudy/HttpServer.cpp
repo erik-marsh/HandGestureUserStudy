@@ -83,7 +83,7 @@ void HttpServerLoop(SyncState& syncState)
         syncState.isRunning.store(false);
     };
 
-    auto startHandler = [&state, &dispatcher, &userIdLock](const Req& req, Res& res)
+    auto startHandler = [&state, &syncState, &dispatcher, &userIdLock](const Req& req, Res& res)
     {
         if (state.isStudyStarted)
         {
@@ -110,7 +110,8 @@ void HttpServerLoop(SyncState& syncState)
             std::stringstream fsss;
             fsss << baseDir << "/user" << state.userId << ".log";
             std::string logFilename = fsss.str();
-            state.logger.OpenLogFile(logFilename);
+            syncState.logger.OpenLogFile(logFilename);
+            syncState.isLogging = true;
 
             std::cout << "Starting user study for user id " << state.userId
                       << " (counterbalancing index=" << state.counterbalancingIndex << ")"
@@ -271,13 +272,13 @@ void HttpServerLoop(SyncState& syncState)
     };
 
     // logging only
-    auto eventsClickHandler = [&state](const Req& req, Res& res)
+    auto eventsClickHandler = [&syncState](const Req& req, Res& res)
     {
         auto result = Helpers::ParseRequest<Helpers::EventClick>(req.body);
         if (result.HasValue())
         {
             for (auto event : result.Value().data)
-                state.logger.Log(event);
+                syncState.logger.Log(event);
             Helpers::printRequest(req, res);
             res.status = 200;
             return;
@@ -286,13 +287,13 @@ void HttpServerLoop(SyncState& syncState)
     };
 
     // logging only
-    auto eventsKeystrokeHandler = [&state](const Req& req, Res& res)
+    auto eventsKeystrokeHandler = [&syncState](const Req& req, Res& res)
     {
         auto result = Helpers::ParseRequest<Helpers::EventKeystroke>(req.body);
         if (result.HasValue())
         {
             for (auto event : result.Value().data)
-                state.logger.Log(event);
+                syncState.logger.Log(event);
             Helpers::printRequest(req, res);
             res.status = 200;
             return;
@@ -301,12 +302,12 @@ void HttpServerLoop(SyncState& syncState)
     };
 
     // logging only, relevant state is client-side only
-    auto eventsFieldHandler = [&state](const Req& req, Res& res)
+    auto eventsFieldHandler = [&syncState](const Req& req, Res& res)
     {
         auto result = Helpers::ParseRequest<Helpers::EventFieldCompletion>(req.body);
         if (result.HasValue())
         {
-            state.logger.Log(result.Value().data);
+            syncState.logger.Log(result.Value().data);
             Helpers::printRequest(req, res);
             res.status = 200;
             return;
@@ -314,7 +315,7 @@ void HttpServerLoop(SyncState& syncState)
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
-    auto eventsTaskHandler = [&state, &dispatcher](const Req& req, Res& res)
+    auto eventsTaskHandler = [&state, &syncState, &dispatcher](const Req& req, Res& res)
     {
         if (state.isStudyDone)
         {
@@ -325,7 +326,7 @@ void HttpServerLoop(SyncState& syncState)
         auto result = Helpers::ParseRequest<Helpers::EventTaskCompletion>(req.body);
         if (result.HasValue())
         {
-            state.logger.Log(result.Value().data);
+            syncState.logger.Log(result.Value().data);
 
             state.currentTaskIndex++;
             if (state.currentTaskIndex == Helpers::TASK_SEQUENCE.size())

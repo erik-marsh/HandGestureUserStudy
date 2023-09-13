@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thread>
 
+#include "CursorLogger.hpp"
 #include "HttpServer.hpp"
 #include "LeapDriver.hpp"
 #include "Logging.hpp"
@@ -63,15 +64,18 @@ int RunUserStudy()
     std::mutex renderableCopyMutex;
     std::atomic<bool> isRunning(true);
     std::atomic<bool> isLeapDriverActive(true);
+    std::atomic<bool> isLogging(false);
 
-    SyncState syncState(connection, renderables, renderableCopyMutex, isRunning,
-                        isLeapDriverActive);
+    SyncState syncState(connection, renderables, renderableCopyMutex, isRunning, isLeapDriverActive,
+                        isLogging);
     auto r_syncState = std::ref(syncState);
 
     std::thread httpThread(Http::HttpServerLoop, r_syncState);
     std::thread driverThread(Input::DriverLoop, r_syncState);
     std::thread renderThread(Visualization::RenderLoop, r_syncState);
+    std::thread cursorLoggingThread(Logging::CursorLoggerLoop, r_syncState);
 
+    cursorLoggingThread.join();
     renderThread.join();
     driverThread.join();
     httpThread.join();
