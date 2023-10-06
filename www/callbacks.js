@@ -1,6 +1,19 @@
 "use strict";
 
 ///////////////////////////////////////////////////////////////////////////////
+// Page elements
+///////////////////////////////////////////////////////////////////////////////
+
+// load the fields embedded within the page
+const userStudyFields = document.getElementsByClassName("user-study-field");
+const userStudyTextFields = document.getElementsByClassName("user-study-field-text");
+const userStudyButtons = document.getElementsByClassName("user-study-field-button");
+const loadingField = document.getElementById("loading");
+
+// load the number of fields, used for tracking progress
+const totalFields = Array.from(userStudyFields).length;
+
+///////////////////////////////////////////////////////////////////////////////
 // Helper functions
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -18,15 +31,10 @@ const sendEventsToServer = (eventObject, eventType) => {
     });
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// Global state
-///////////////////////////////////////////////////////////////////////////////
 
-// load the fields embedded within the page
-const userStudyFields = document.getElementsByClassName("user-study-field");
-const userStudyTextFields = document.getElementsByClassName("user-study-field-text");
-const userStudyButtons = document.getElementsByClassName("user-study-field-button");
-const loadingField = document.getElementById("loading");
+///////////////////////////////////////////////////////////////////////////////
+// Page initialization
+///////////////////////////////////////////////////////////////////////////////
 
 // Bootstrap 5 broke the CSS that lined up the input and expectd textareas,
 // so we manually set the input field's size in JS now
@@ -39,11 +47,14 @@ const resizeListener = (userStudyTextField) => {
 const resizeHandler = () => {
     Array.from(userStudyTextFields).forEach(field => resizeListener(field));
 };
+
 window.onresize = resizeHandler;
 resizeHandler();  // to handle initial page load
 
-// load the number of fields, used for tracking progress
-const totalFields = Array.from(userStudyFields).length;
+
+///////////////////////////////////////////////////////////////////////////////
+// Global state
+///////////////////////////////////////////////////////////////////////////////
 
 // shared containers
 let clickEvents = [];
@@ -125,14 +136,89 @@ Array.from(userStudyTextFields).forEach(field => {
         key: keyupEvent.key
     });
 
+    const makeKeystrokeEvent2 = (timestampMillis, inputEvent, wasCorrect) => ({
+        timestampMillis: timestampMillis,
+        wasCorrect: wasCorrect,
+        key: inputEvent.data
+    });
+
     let gatheredInputs = [];
 
-    const listener = e => {
-        const timestampMillis = Date.now();
-        const equalSoFar = expectedString.startsWith(inputTextarea.value);
-        const equality = inputTextarea.value === expectedString;
+    // const listener = e => {
+    //     console.log(`[Keystrokes] key: ${e.key}`);
+    //     // the problem is right here:
+    //     // if you press the next key fast enough, 
+    //     // the document updates and inputTextarea.value updates faster than this callback can start
+    //     const currInputText = inputTextarea.value.repeat(1);
+    //     const timestampMillis = Date.now();
+    //     const equalSoFar = expectedString.startsWith(currInputText);
+    //     const equality = currInputText === expectedString;
 
-        gatheredInputs.push(makeKeystrokeEvent(timestampMillis, e, equalSoFar));
+    //     gatheredInputs.push(makeKeystrokeEvent(timestampMillis, e, equalSoFar));
+
+    //     if (equalSoFar) {
+    //         inputTextarea.setAttribute("data-input-state", "progress");
+    //     } else {
+    //         inputTextarea.setAttribute("data-input-state", "error");
+    //     }
+
+    //     if (equality) {
+    //         console.log("[Keystrokes] Field has been completed, moving on...");
+    //         console.log(`[Keystrokes]     Last key that was pressed: ${e.key}`);
+    //         console.log(`[Keystrokes]     Current equality value: ${equality}`);
+    //         inputTextarea.setAttribute("disabled", "");
+    //         inputTextarea.setAttribute("data-input-state", "completed");
+    //         field.removeEventListener("keyup", listener);
+
+    //         sendEventsToServer(gatheredInputs, "keystroke");
+    //         state.currentField++;
+    //     }
+    // };
+    // field.addEventListener("keyup", listener);
+
+    let assembledString = "";
+    //let lastEqualSoFar = true;
+    // TODO: the visuals still don't work...
+    // maybe tying that to keystroke events will be a better idea?
+    const listener2 = e => {
+        if (e.data == null) {
+            // check for equality anyway: this helps with the visual updates
+            const test = assembledString;
+            const equalSoFar = expectedString.startsWith(test);
+
+            if (equalSoFar) {
+                inputTextarea.setAttribute("data-input-state", "progress");
+            } else {
+                inputTextarea.setAttribute("data-input-state", "error");
+            }
+
+            return;  // important: sending a null to the server crashes the program
+        }
+
+        const timestampMillis = Date.now();
+        console.log(`[Keystrokes] key: [${typeof (e.data)}]${e.data}`);
+
+        // assemble string
+        const test = assembledString + e.data;
+        const equalSoFar = expectedString.startsWith(test);
+        const equality = test === expectedString;
+
+        if (equalSoFar) {
+            assembledString = test;
+        }
+        // if (lastEqualSoFar) {
+        //     assembledString += e.data;
+        // } else {
+        //     assembledString = assembledString.slice(0, assembledString.length() - 2);
+        //     assembledString += e.data;
+        // }
+        console.log(`[Keystrokes]: assembled: ${assembledString}`);
+
+        //const equalSoFar = expectedString.startsWith(assembledString);
+        //lastEqualSoFar = equalSoFar;
+
+        gatheredInputs.push(makeKeystrokeEvent2(timestampMillis, e, equalSoFar));
+        console.log(`[Keystrokes] Gathered Inputs: ${gatheredInputs}`);
 
         if (equalSoFar) {
             inputTextarea.setAttribute("data-input-state", "progress");
@@ -142,15 +228,18 @@ Array.from(userStudyTextFields).forEach(field => {
 
         if (equality) {
             console.log("[Keystrokes] Field has been completed, moving on...");
+            console.log(`[Keystrokes]     Last key that was pressed: ${e.data}`);
+            console.log(`[Keystrokes]     Current equality value: ${equality}`);
+
             inputTextarea.setAttribute("disabled", "");
             inputTextarea.setAttribute("data-input-state", "completed");
-            field.removeEventListener("keyup", listener);
+            field.removeEventListener("keyup", listener2);
 
             sendEventsToServer(gatheredInputs, "keystroke");
             state.currentField++;
         }
     };
-    field.addEventListener("keyup", listener);
+    field.addEventListener("input", listener2);
 });
 
 
