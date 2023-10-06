@@ -47,11 +47,12 @@ constexpr std::array IdNumbers = {"123-45-6789"sv, "00011001"sv, "1234-5555"sv, 
 constexpr std::array Names = {"Charles Mingus"sv, "Paul Desmond"sv,  "Miles Davis"sv,
                               "Roy Hargrove"sv,   "Johnny Cash"sv,   "Denzel Curry"sv,
                               "Marty Friedman"sv, "Shutoku Mukai"sv, "Hisako Tabuchi"sv,
-                              "Kentaro Nakao"sv,  "Ahito Inazawa"sv, "Etsuko Yakushimaru"sv};
+                              "Kentaro Nakao"sv,  "Ahito Inazawa"sv, "Etsuko Yakushimaru"sv,
+                              "Joe Duplantier"sv};
 
 constexpr std::array PhysicalAddresses = {"100 W. 1st St."sv, "432 W. 1st St. Apt. 103"sv,
                                           "234 E. 1st St. Apt. 307"sv, "234 E. 1st St. Apt. 201"sv};
-                                          
+
 constexpr std::array EmailBodyText = {
     "Received, thanks."sv,
     "I'll handle that after lunch. Thanks."sv,
