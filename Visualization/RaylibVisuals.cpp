@@ -54,7 +54,7 @@ void UpdateCamera(Camera &camera)
         camera.target = Vector3{0.0f, 0.0f, 0.0f};
         camera.up = Vector3{0.0f, 1.0f, 0.0f};
         camera.position = Vector3{10.0f, 0.0f, 0.0f};
-        std::cout << "Looking at YZ plane (pos=(10,0,0))" << std::endl;
+        std::cout << "Looking at YZ plane (pos=(10,0,0))\n";
     }
 
     if (IsKeyDown(KEY_KP_2))
@@ -62,7 +62,7 @@ void UpdateCamera(Camera &camera)
         camera.target = Vector3{0.0f, 0.0f, 0.0f};
         camera.up = Vector3{0.0f, 1.0f, 0.0f};
         camera.position = Vector3{0.0f, 0.0f, 10.0f};
-        std::cout << "Looking at XY plane (pos=(0,0,10))" << std::endl;
+        std::cout << "Looking at XY plane (pos=(0,0,10))\n";
     }
 
     if (IsKeyDown(KEY_KP_3))
@@ -70,7 +70,7 @@ void UpdateCamera(Camera &camera)
         camera.target = Vector3{0.0f, 0.0f, 0.0f};
         camera.up = Vector3{0.0f, 1.0f, 0.0f};
         camera.position = Vector3{1.0f, 10.0f, 1.0f};
-        std::cout << "Looking at XZ plane from above (pos=(1,10,1))" << std::endl;
+        std::cout << "Looking at XZ plane from above (pos=(1,10,1))\n";
     }
 
     if (IsKeyDown(KEY_KP_4))
@@ -78,7 +78,7 @@ void UpdateCamera(Camera &camera)
         camera.target = Vector3{0.0f, 0.0f, 0.0f};
         camera.up = Vector3{0.0f, 1.0f, 0.0f};
         camera.position = Vector3{1.0f, -10.0f, 1.0f};
-        std::cout << "Looking at XZ plane from below (pos=(1,-10,1))" << std::endl;
+        std::cout << "Looking at XZ plane from below (pos=(1,-10,1))\n";
     }
 }
 

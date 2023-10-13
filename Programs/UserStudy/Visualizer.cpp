@@ -6,6 +6,8 @@
 #include <Input/LeapMotionGestureProvider.hpp>
 #include <Math/MathHelpers.hpp>
 #include <Visualization/RaylibVisuals.hpp>
+#include <array>
+#include <cstdio>
 #include <iostream>
 #include <sstream>
 
@@ -25,6 +27,36 @@ constinit const char* const purpleMsg1 =
 constinit const char* const purpleMsg2 = "mapped to the screen.";
 constinit const char* const yellowMsg =
     "The yellow line shows the direction the cursor will move in.";
+
+void RaylibLoggerPrefix(int msgType, const char* text, va_list args)
+{
+    int length = std::vsnprintf(nullptr, 0, text, args) + 1;  // +1 to account for null termination
+    std::string msgBuffer(length, '\0');
+    std::vsnprintf(msgBuffer.data(), length, text, args);
+    msgBuffer.resize(length - 1);  // get rid of the null terminator
+
+    std::stringstream ss;
+    ss << "[raylib] ";
+    switch (msgType)
+    {
+        case LOG_INFO:
+            ss << "INFO: ";
+            break;
+        case LOG_ERROR:
+            ss << "ERROR ";
+            break;
+        case LOG_WARNING:
+            ss << "WARN: ";
+            break;
+        case LOG_DEBUG:
+            ss << "DEBUG: ";
+            break;
+        default:
+            break;
+    }
+    ss << msgBuffer << "\n";
+    std::cout << ss.str();
+}
 
 void MakeDirectionalTriangle(int x, int y, int rectCenterX, int rectCenterY, int delta, Color color)
 {
@@ -48,8 +80,9 @@ void MakeDirectionalTriangle(int x, int y, int rectCenterX, int rectCenterY, int
 
 void RenderLoop(SyncState& syncState)
 {
-    std::cout << "Starting rendering thread..." << std::endl;
+    std::cout << "[main] Starting rendering thread...\n";
 
+    SetTraceLogCallback(RaylibLoggerPrefix);
     InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "Gesture Driver Debug Visualizer");
     SetTargetFPS(60);
 
@@ -191,7 +224,7 @@ void RenderLoop(SyncState& syncState)
     }
 
     CloseWindow();
-    std::cout << "Shutting down rendering thread..." << std::endl;
+    std::cout << "[main] Shutting down rendering thread...\n";
 }
 
 }  // namespace Visualization

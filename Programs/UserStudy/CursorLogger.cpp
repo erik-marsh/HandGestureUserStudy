@@ -14,7 +14,7 @@ namespace Logging
 
 void CursorLoggerLoop(SyncState& syncState)
 {
-    std::cout << "Starting cursor position logging thread..." << std::endl;
+    std::cout << "[main] Starting cursor position logging thread...\n";
 
     using Clock = std::chrono::high_resolution_clock;
     using Time = std::chrono::high_resolution_clock::time_point;
@@ -45,7 +45,7 @@ void CursorLoggerLoop(SyncState& syncState)
             std::this_thread::sleep_for(loopTime - processingTime);
     }
 
-    std::cout << "Shutting down cursor position logging thread..." << std::endl;
+    std::cout << "[main] Shutting down cursor position logging thread...\n";
 }
 
 }  // namespace Logging

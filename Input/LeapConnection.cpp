@@ -1,14 +1,16 @@
 #include "LeapConnection.hpp"
 
+#include <format>
 #include <iostream>
 #include <stdexcept>
 
 namespace Input::Leap
 {
+
 void DebugPrint(const std::string& message)
 {
     if constexpr (ENABLE_DEBUG_PRINT)
-        std::cout << message << "\n";
+        std::cout << message;
 }
 
 std::string GetEnumString(eLeapRS res)
@@ -145,7 +147,8 @@ void LeapConnection::MessageLoop()
 
         if (result != eLeapRS_Success)
         {
-            printf("LeapC PollConnection call was %s.\n", GetEnumString(result).c_str());
+            DebugPrint(std::format("[Leap Motion] LeapC PollConnection call returned {}.\n",
+                                     GetEnumString(result)));
             continue;
         }
 
@@ -207,7 +210,9 @@ void LeapConnection::MessageLoop()
                 break;
             default:
                 // discard unknown message types
-                printf("Encountered unknown message %i, discarding.\n", msg.type);
+                DebugPrint(std::format(
+                    "[Leap Motion] Encountered an unknown message of type {}. Discarding.\n",
+                    static_cast<int>(msg.type)));
         }  // switch on msg.type
     }
 }
@@ -223,13 +228,13 @@ std::mutex LeapConnection::m_dataLock{};
 
 void LeapConnection::OnConnected(const LEAP_CONNECTION_EVENT* connection_event)
 {
-    DebugPrint("[Leap Motion] Connected.");
+    DebugPrint("[Leap Motion] Connected.\n");
     m_isConnected = true;
 }
 
 void LeapConnection::OnConnectionLost(const LEAP_CONNECTION_LOST_EVENT* connection_lost_event)
 {
-    DebugPrint("[Leap Motion] Connection lost.");
+    DebugPrint("[Leap Motion] Connection lost.\n");
     m_isConnected = false;
 }
 
@@ -240,7 +245,7 @@ void LeapConnection::OnDeviceFound(const LEAP_DEVICE_EVENT* device_event)
     eLeapRS result = LeapOpenDevice(device_event->device, &deviceHandle);
     if (result != eLeapRS_Success)
     {
-        DebugPrint("[Leap Motion] ERROR (" + GetEnumString(result) + "): Could not open device.");
+        DebugPrint("[Leap Motion] ERROR (" + GetEnumString(result) + "): Could not open device.\n");
         return;
     }
 
@@ -263,7 +268,7 @@ void LeapConnection::OnDeviceFound(const LEAP_DEVICE_EVENT* device_event)
         if (result != eLeapRS_Success)
         {
             DebugPrint("[Leap Motion] ERROR (" + GetEnumString(result) +
-                       "): Failed to get device info.");
+                         "): Failed to get device info.\n");
             free(deviceProperties.serial);
             return;
         }
@@ -272,33 +277,33 @@ void LeapConnection::OnDeviceFound(const LEAP_DEVICE_EVENT* device_event)
 
     free(deviceProperties.serial);
     LeapCloseDevice(deviceHandle);
-    DebugPrint("[Leap Motion] Found device.");
+    DebugPrint("[Leap Motion] Found device.\n");
 }
 
 void LeapConnection::OnDeviceLost(const LEAP_DEVICE_EVENT* device_event)
 {
-    DebugPrint("[Leap Motion] Device lost.");
+    DebugPrint("[Leap Motion] Device lost.\n");
 }
 
 void LeapConnection::OnDeviceFailure(const LEAP_DEVICE_FAILURE_EVENT* device_failure_event)
 {
-    DebugPrint("[Leap Motion] Device failure!");
+    DebugPrint("[Leap Motion] Device failure!\n");
 }
 
 void LeapConnection::OnPolicy(const LEAP_POLICY_EVENT* policy_event)
 {
-    DebugPrint("[Leap Motion] Policy event.");
+    DebugPrint("[Leap Motion] Policy event.\n");
 }
 
 void LeapConnection::OnFrame(const LEAP_TRACKING_EVENT* tracking_event)
 {
-    // DebugPrint("[Leap Motion] Got frame.");
+    // DebugPrint("[Leap Motion] Got frame.\n");
     SetFrame(tracking_event);
 }
 
 void LeapConnection::OnLogMessage(const LEAP_LOG_EVENT* log_event)
 {
-    DebugPrint("[Leap Motion] Got log message.");
+    DebugPrint("[Leap Motion] Got log message.\n");
 }
 
 void LeapConnection::OnLogMessages(const LEAP_LOG_EVENTS* log_events)
@@ -309,38 +314,38 @@ void LeapConnection::OnLogMessages(const LEAP_LOG_EVENTS* log_events)
 
 void LeapConnection::OnConfigChange(const LEAP_CONFIG_CHANGE_EVENT* config_change_event)
 {
-    DebugPrint("[Leap Motion] Got config change.");
+    DebugPrint("[Leap Motion] Got config change.\n");
 }
 
 void LeapConnection::OnConfigResponse(const LEAP_CONFIG_RESPONSE_EVENT* config_response_event)
 {
-    DebugPrint("[Leap Motion] Got config response.");
+    DebugPrint("[Leap Motion] Got config response.\n");
 }
 
 void LeapConnection::OnImage(const LEAP_IMAGE_EVENT* image_event)
 {
-    // DebugPrint("[Leap Motion] Got image.");
+    // DebugPrint("[Leap Motion] Got image.\n");
 }
 
 void LeapConnection::OnPointMappingChange(
     const LEAP_POINT_MAPPING_CHANGE_EVENT* point_mapping_change_event)
 {
-    DebugPrint("[Leap Motion] Got point mapping change.");
+    DebugPrint("[Leap Motion] Got point mapping change.\n");
 }
 
 void LeapConnection::OnHeadPose(const LEAP_HEAD_POSE_EVENT* head_pose_event)
 {
-    DebugPrint("[Leap Motion] Got head pose.");
+    DebugPrint("[Leap Motion] Got head pose.\n");
 }
 
 void LeapConnection::OnIMU(const LEAP_IMU_EVENT* imu_event)
 {
-    DebugPrint("[Leap Motion] Got IMU update.");
+    DebugPrint("[Leap Motion] Got IMU update.\n");
 }
 
 void LeapConnection::OnTrackingMode(const LEAP_TRACKING_MODE_EVENT* mode_event)
 {
-    DebugPrint("[Leap Motion] Got tracking mode.");
+    DebugPrint("[Leap Motion] Got tracking mode.\n");
 }
 
 }  // namespace Input::Leap

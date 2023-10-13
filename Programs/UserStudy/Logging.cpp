@@ -1,11 +1,12 @@
 #include "Logging.hpp"
 
 #include <array>
+#include <cassert>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cassert>
 
 namespace Logging
 {
@@ -27,7 +28,11 @@ std::string ClickLocationToString(Events::ClickLocation loc);
 Logger::Logger() : hasFilename(false), currBuffer(0), currIndex(0), isFileInitialized(false) {}
 
 Logger::Logger(std::string filename)
-    : logFilename(filename), hasFilename(true), currBuffer(0), currIndex(0), isFileInitialized(false)
+    : logFilename(filename),
+      hasFilename(true),
+      currBuffer(0),
+      currIndex(0),
+      isFileInitialized(false)
 {
 }
 
@@ -38,7 +43,9 @@ Logger::~Logger()
     std::ofstream outFile(logFilename, openMode);
     for (int i = 0; i < currIndex; i++)
         outFile << logDoubleBuffer[currBuffer][i] << "\n";
-    std::cout << "Closing log file " << logFilename << " and writing it to disk." << std::endl;
+
+    std::cout << std::format("[Event Logging] Closing log file {} and writing it to disk.\n",
+                             logFilename);
 }
 
 void Logger::OpenLogFile(const std::string& filename)

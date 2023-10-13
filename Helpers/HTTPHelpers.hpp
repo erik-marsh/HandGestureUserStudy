@@ -36,7 +36,7 @@ Expected<int, Helpers::ParseError> ParseInt(const std::string& value, int min, i
 auto printRequest = [](const httplib::Request& req, httplib::Response& res)
 {
     std::stringstream ss;
-    ss << "[" << req.path << "] " << req.body << "\n";
+    ss << "[HTTP] [" << req.path << "] " << req.body << "\n";
     std::cout << ss.str();
 };
 
@@ -46,19 +46,19 @@ auto parseErrorHandler =
     switch (error)
     {
         case Helpers::ParseError::SchemaNotValidJSON:
-            std::cout << "Schema was not valid." << std::endl;
+            std::cout << "[HTTP] Error: Schema was not valid.\n";
             res.status = 500;  // 500 Internal Server Error
             break;
         case Helpers::ParseError::RequestNotValidJSON:
-            std::cout << "Request was not valid JSON." << std::endl;
+            std::cout << "[HTTP] Error: Request was not valid JSON.\n";
             res.status = 400;  // 400 Bad Request
             break;
         case Helpers::ParseError::RequestDoesNotFollowSchema:
-            std::cout << "Request did not adhere to schema." << std::endl;
+            std::cout << "[HTTP] Error: Request did not adhere to schema.\n";
             res.status = 400;  // 400 Bad Request
             break;
         default:
-            std::cout << "Parse failed but there was no error?" << std::endl;
+            std::cout << "[HTTP] Error: Parse failed but there was no error?\n";
             res.status = 500;  // 500 Internal Server Error
             break;
     }

@@ -14,6 +14,7 @@
 #include <Helpers/UserIDLock.hpp>
 #include <Input/SimulatedMouse.hpp>
 #include <filesystem>
+#include <format>
 #include <iostream>
 #include <sstream>
 #include <string>
@@ -30,7 +31,7 @@ const std::string baseDir = "Logs";
 
 void HttpServerLoop(SyncState& syncState)
 {
-    std::cout << "Starting HTTP thread..." << std::endl;
+    std::cout << "[main] Starting HTTP thread...\n";
 
     if (!std::filesystem::exists(baseDir))
         std::filesystem::create_directory(baseDir);
@@ -38,7 +39,7 @@ void HttpServerLoop(SyncState& syncState)
     httplib::Server server;
     if (!server.set_mount_point("/", "./www/"))
     {
-        std::cout << "Unable to set mount point" << std::endl;
+        std::cout << "[HTTP] Unable to set mount point.\n";
         syncState.isRunning.store(false);
         return;
     }
@@ -61,7 +62,7 @@ void HttpServerLoop(SyncState& syncState)
     // Declare all the lambdas used to service HTTP requests
     auto eventPusherHandler = [&dispatcher](const Req& req, Res& res)
     {
-        std::cout << "Got request for eventPusher" << std::endl;
+        std::cout << "[HTTP] Got request for eventPusher.\n";
         res.set_chunked_content_provider("text/event-stream",
                                          [&dispatcher](size_t offset, httplib::DataSink& sink)
                                          {
@@ -72,7 +73,7 @@ void HttpServerLoop(SyncState& syncState)
 
     auto quitHandler = [&server, &syncState, &dispatcher](const Req& req, Res& res)
     {
-        std::cout << "Server got shutdown signal, shutting down threads..." << std::endl;
+        std::cout << "[HTTP] Server got shutdown signal, shutting down threads...\n";
         dispatcher.ShutDown();
         {
             std::lock_guard<std::mutex> lock(Helpers::heartbeatMutex);
@@ -97,7 +98,8 @@ void HttpServerLoop(SyncState& syncState)
             // check if the user ID has been used already
             if (userIdLock.IsLocked(result.Value().userId))
             {
-                std::cout << "User ID " << result.Value().userId << " is already in use.";
+                std::cout << std::format("[HTTP] User ID {} is already in use.\n",
+                                         result.Value().userId);
                 res.status = 403;
                 return;
             }
@@ -113,10 +115,9 @@ void HttpServerLoop(SyncState& syncState)
             syncState.logger.OpenLogFile(logFilename);
             syncState.isLogging = true;
 
-            std::cout << "Starting user study for user id " << state.userId
-                      << " (counterbalancing index=" << state.counterbalancingIndex << ")"
-                      << std::endl;
-
+            std::cout << std::format(
+                "[HTTP] Starting user study for user ID {} (counterbalancing index={}).\n",
+                state.userId, state.counterbalancingIndex);
             dispatcher.SendEvent("event: proceed\r\ndata: starting tutorial\r\n\r\n");
 
             res.status = 200;  // 200 OK
@@ -265,7 +266,7 @@ void HttpServerLoop(SyncState& syncState)
                 res.set_content(emailTemplate.GetSubstitution(), "text/html");
                 break;
             default:
-                std::cout << "Something went horribly wrong" << std::endl;
+                std::cout << "[HTTP] Something went horribly wrong...\n";
                 res.status = 500;
                 break;
         }
@@ -352,7 +353,7 @@ void HttpServerLoop(SyncState& syncState)
                << "\n    userId: " << state.userId
                << "\n    counterbalancingIndex: " << state.counterbalancingIndex
                << "\n    currentTaskIndex: " << state.currentTaskIndex
-               << "\n    currentDeviceIndex: " << state.currentDeviceIndex << std::endl;
+               << "\n    currentDeviceIndex: " << state.currentDeviceIndex << "\n";
             std::cout << ss.str();
 
             Helpers::printRequest(req, res);
@@ -381,7 +382,7 @@ void HttpServerLoop(SyncState& syncState)
     server.listen("localhost", 5000);
     heartbeatThread.join();
 
-    std::cout << "Shutting down HTTP thread..." << std::endl;
+    std::cout << "[main] Shutting down HTTP thread...\n";
 }
 
 }  // namespace Http

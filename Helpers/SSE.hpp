@@ -69,7 +69,7 @@ std::atomic<bool> killHeartbeat{false};
 void HeartbeatLoop(std::atomic<bool>& isRunning, Helpers::EventDispatcher& dispatcher,
                    const int intervalSeconds)
 {
-    std::cout << "Starting SSE heartbeat thread..." << std::endl;
+    std::cout << "[main] Starting SSE heartbeat thread...\n";
     while (isRunning)
     {
         dispatcher.SendEvent("data: keep alive\r\n\r\n");
@@ -77,6 +77,7 @@ void HeartbeatLoop(std::atomic<bool>& isRunning, Helpers::EventDispatcher& dispa
         heartbeatCV.wait_for(lock, std::chrono::seconds(intervalSeconds),
                              [] { return killHeartbeat.load(); });
     }
+    std::cout << "[main] Stopping SSE heartbeat thread...\n";
 }
 
 }

@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <format>
 
 namespace Helpers
 {
@@ -14,7 +15,7 @@ UserIDLock::UserIDLock(const std::string& lockFilename) : filename(lockFilename)
     {
         int id = std::stoi(line);
         lockedIds.push_back(id);
-        std::cout << id << std::endl;
+        std::cout << std::format("[User IDs] {} is unavailable.\n", id);
     }
 }
 
