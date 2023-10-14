@@ -13,6 +13,9 @@ eventSource.addEventListener("error", e => {
     console.log(e);
 });
 
+// TODO: if we keep a queue of messages around on the server side, 
+// we can keep sending events until the client receives them,
+// preventing the issue where 
 // captures events of type message AND events WITHOUT a type
 // but nothing else
 eventSource.addEventListener("message", e => {
