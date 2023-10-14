@@ -117,6 +117,8 @@ let state = new Proxy(__state, __stateHandler);
 // Keystroke listener
 ///////////////////////////////////////////////////////////////////////////////
 
+const navigationKeys = ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "End", "Home", "PageDown", "PageUp"];
+
 Array.from(userStudyTextFields).forEach(field => {
     const fieldIndex = parseInt(field.getAttribute("data-field-index"));
     const inputTextarea = field.getElementsByClassName("input")[0];
@@ -130,61 +132,50 @@ Array.from(userStudyTextFields).forEach(field => {
         inputTextarea.setAttribute("data-input-state", "progress");
     }
 
-    const makeKeystrokeEvent = (timestampMillis, keyupEvent, wasCorrect) => ({
-        timestampMillis: timestampMillis,
-        wasCorrect: wasCorrect,
-        key: keyupEvent.key
-    });
-
-    const makeKeystrokeEvent2 = (timestampMillis, inputEvent, wasCorrect) => ({
-        timestampMillis: timestampMillis,
-        wasCorrect: wasCorrect,
-        key: inputEvent.data
-    });
-
     let gatheredInputs = [];
 
-    // const listener = e => {
-    //     console.log(`[Keystrokes] key: ${e.key}`);
-    //     // the problem is right here:
-    //     // if you press the next key fast enough, 
-    //     // the document updates and inputTextarea.value updates faster than this callback can start
-    //     const currInputText = inputTextarea.value.repeat(1);
-    //     const timestampMillis = Date.now();
-    //     const equalSoFar = expectedString.startsWith(currInputText);
-    //     const equality = currInputText === expectedString;
-
-    //     gatheredInputs.push(makeKeystrokeEvent(timestampMillis, e, equalSoFar));
-
-    //     if (equalSoFar) {
-    //         inputTextarea.setAttribute("data-input-state", "progress");
-    //     } else {
-    //         inputTextarea.setAttribute("data-input-state", "error");
-    //     }
-
-    //     if (equality) {
-    //         console.log("[Keystrokes] Field has been completed, moving on...");
-    //         console.log(`[Keystrokes]     Last key that was pressed: ${e.key}`);
-    //         console.log(`[Keystrokes]     Current equality value: ${equality}`);
-    //         inputTextarea.setAttribute("disabled", "");
-    //         inputTextarea.setAttribute("data-input-state", "completed");
-    //         field.removeEventListener("keyup", listener);
-
-    //         sendEventsToServer(gatheredInputs, "keystroke");
-    //         state.currentField++;
-    //     }
-    // };
-    // field.addEventListener("keyup", listener);
-
     let assembledString = "";
-    //let lastEqualSoFar = true;
-    // TODO: the visuals still don't work...
-    // maybe tying that to keystroke events will be a better idea?
-    const listener2 = e => {
-        if (e.data == null) {
-            // check for equality anyway: this helps with the visual updates
-            const test = assembledString;
-            const equalSoFar = expectedString.startsWith(test);
+    const sink = {
+        keystrokeQueue: [],
+        timestampQueue: [],
+        inputCharQueue: [],
+        notify() {
+            // TODO: the user must be reminded that they are not to:
+            //     Use arrow keys (this is prevented)
+            //     Use the delete key (this is prevented)
+            //     Use any other key combinations for editing,
+            //         such as Shift+Arrow keys, Shift+Home, Shift+End, etc...
+            //     (This is largely prevented by disallowing navigation keys)
+            // remind me to never do keystroke-level input validation ever again
+
+            // inputChar is null if the input operation did NOT insert text
+            // hence if we filtered our control keys properly,
+            // we don't need to worry about the queues becoming desynced
+            const keystroke = this.keystrokeQueue.shift();
+            const timestamp = this.timestampQueue.shift();
+            const inputChar = this.inputCharQueue.shift();
+
+            if (keystroke === "Backspace") {
+                assembledString = assembledString.slice(0, assembledString.length - 1);
+            } else {
+                assembledString += inputChar;
+            }
+
+            console.log(`[Keystrokes]  keytroke=${keystroke}, len=${keystroke.length}`);
+            console.log(`[Keystrokes] timestamp=${timestamp}`);
+            console.log(`[Keystrokes] inputChar=${inputChar}`);
+            console.log(`[Keystrokes] assembled=${assembledString}`);
+
+            const equalSoFar = expectedString.startsWith(assembledString);
+            const equality = expectedString === assembledString;
+
+            if (keystroke != "Backspace") {
+                gatheredInputs.push({
+                    timestampMillis: timestamp,
+                    wasCorrect: equalSoFar,
+                    key: inputChar
+                });
+            }
 
             if (equalSoFar) {
                 inputTextarea.setAttribute("data-input-state", "progress");
@@ -192,54 +183,45 @@ Array.from(userStudyTextFields).forEach(field => {
                 inputTextarea.setAttribute("data-input-state", "error");
             }
 
-            return;  // important: sending a null to the server crashes the program
-        }
+            if (equality) {
+                console.log("[Keystrokes] Field has been completed, moving on...");
+                console.log(`[Keystrokes]     Last key that was pressed: ${keystroke.key}`);
+                console.log(`[Keystrokes]     Current equality value: ${equality}`);
+                inputTextarea.setAttribute("disabled", "");
+                inputTextarea.setAttribute("data-input-state", "completed");
+                field.removeEventListener("keydown", keydownListener);
+                field.removeEventListener("input", inputListener)
 
+                sendEventsToServer(gatheredInputs, "keystroke");
+                state.currentField++;
+            }
+        }
+    }
+
+    const keydownListener = e => {
         const timestampMillis = Date.now();
-        console.log(`[Keystrokes] key: [${typeof (e.data)}]${e.data}`);
-
-        // assemble string
-        const test = assembledString + e.data;
-        const equalSoFar = expectedString.startsWith(test);
-        const equality = test === expectedString;
-
-        if (equalSoFar) {
-            assembledString = test;
+        // we want to explicitly disable keyboard navigation keys
+        if (navigationKeys.includes(e.key)) {
+            e.preventDefault();
+            e.stopPropagation();
         }
-        // if (lastEqualSoFar) {
-        //     assembledString += e.data;
-        // } else {
-        //     assembledString = assembledString.slice(0, assembledString.length() - 2);
-        //     assembledString += e.data;
-        // }
-        console.log(`[Keystrokes]: assembled: ${assembledString}`);
+        // some keydown events do not have a corresponding input event
+        // this is usually control keys
+        // many of these can be filtered as follows (as per https://www.w3.org/TR/uievents-key/#keys-unicode):
+        if (e.key != "Backspace" && e.key.length >= 2) return;
 
-        //const equalSoFar = expectedString.startsWith(assembledString);
-        //lastEqualSoFar = equalSoFar;
-
-        gatheredInputs.push(makeKeystrokeEvent2(timestampMillis, e, equalSoFar));
-        console.log(`[Keystrokes] Gathered Inputs: ${gatheredInputs}`);
-
-        if (equalSoFar) {
-            inputTextarea.setAttribute("data-input-state", "progress");
-        } else {
-            inputTextarea.setAttribute("data-input-state", "error");
-        }
-
-        if (equality) {
-            console.log("[Keystrokes] Field has been completed, moving on...");
-            console.log(`[Keystrokes]     Last key that was pressed: ${e.data}`);
-            console.log(`[Keystrokes]     Current equality value: ${equality}`);
-
-            inputTextarea.setAttribute("disabled", "");
-            inputTextarea.setAttribute("data-input-state", "completed");
-            field.removeEventListener("keyup", listener2);
-
-            sendEventsToServer(gatheredInputs, "keystroke");
-            state.currentField++;
-        }
+        sink.keystrokeQueue.push(e.key);
+        sink.timestampQueue.push(timestampMillis);
     };
-    field.addEventListener("input", listener2);
+
+    const inputListener = e => {
+        console.log(e);
+        sink.inputCharQueue.push(e.data);
+        sink.notify();
+    }
+
+    field.addEventListener("keydown", keydownListener);
+    field.addEventListener("input", inputListener);
 });
 
 
