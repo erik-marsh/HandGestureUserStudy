@@ -62,7 +62,6 @@ void HttpServerLoop(SyncState& syncState)
     // Declare all the lambdas used to service HTTP requests
     auto eventPusherHandler = [&dispatcher](const Req& req, Res& res)
     {
-        std::cout << "[HTTP] Got request for eventPusher.\n";
         res.set_chunked_content_provider("text/event-stream",
                                          [&dispatcher](size_t offset, httplib::DataSink& sink)
                                          {
@@ -366,6 +365,14 @@ void HttpServerLoop(SyncState& syncState)
     // Hook up the lambdas to the server and begin listening
     server.set_error_handler(Helpers::errorHandler);
     server.set_exception_handler(Helpers::exceptionHandler);
+    server.set_pre_routing_handler(
+        [](const Req& req, Res& res)
+        {
+            std::stringstream ss;
+            ss << "[HTTP] " << req.method << " [" << req.path << "]\n";
+            std::cout << ss.str();
+            return httplib::Server::HandlerResponse::Unhandled;
+        });
 
     server.Get("/", formHandler);
     server.Get("/test", formTestHandler);
