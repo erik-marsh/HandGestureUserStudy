@@ -161,7 +161,7 @@ Array.from(userStudyTextFields).forEach(field => {
                 assembledString += inputChar;
             }
 
-            console.log(`[Keystrokes]  keytroke=${keystroke}, len=${keystroke.length}`);
+            console.log(`[Keystrokes] keystroke=${keystroke}, len=${keystroke.length}`);
             console.log(`[Keystrokes] timestamp=${timestamp}`);
             console.log(`[Keystrokes] inputChar=${inputChar}`);
             console.log(`[Keystrokes] assembled=${assembledString}`);
@@ -201,7 +201,7 @@ Array.from(userStudyTextFields).forEach(field => {
     const keydownListener = e => {
         const timestampMillis = Date.now();
         // we want to explicitly disable keyboard navigation keys
-        if (navigationKeys.includes(e.key)) {
+        if (navigationKeys.includes(e.key) || e.ctrlKey || e.altKey || e.metaKey) {
             e.preventDefault();
             e.stopPropagation();
         }
@@ -210,12 +210,16 @@ Array.from(userStudyTextFields).forEach(field => {
         // many of these can be filtered as follows (as per https://www.w3.org/TR/uievents-key/#keys-unicode):
         if (e.key != "Backspace" && e.key.length >= 2) return;
 
+        // we can still press backspace when there is no input
+        // so we need to prevent the appending of this backspace to keep the lists in sync
+        if (assembledString.length === 0 && e.key === "Backspace")
+            return;
+        
         sink.keystrokeQueue.push(e.key);
         sink.timestampQueue.push(timestampMillis);
     };
 
     const inputListener = e => {
-        console.log(e);
         sink.inputCharQueue.push(e.data);
         sink.notify();
     }
