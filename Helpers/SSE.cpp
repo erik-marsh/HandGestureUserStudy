@@ -34,10 +34,10 @@ void EventDispatcher::WaitEvent(httplib::DataSink& sink)
         messageQueue.pop();
     queueSize = messageQueue.size();
 
-    // std::stringstream ss;
-    // ss << "[SSE] [queue size=" << queueSize << ", write success=" << std::boolalpha << succeeded
-    //    << "] Sent event: " << message;
-    // std::cout << ss.str();
+    std::stringstream ss;
+    ss << "[SSE] [queue size=" << queueSize << ", write success=" << std::boolalpha << succeeded
+       << "] Sent event: " << message;
+    std::cout << ss.str();
 
     // lock is released
 }
