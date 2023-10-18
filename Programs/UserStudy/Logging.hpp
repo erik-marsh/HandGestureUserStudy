@@ -7,9 +7,6 @@
 #include <type_traits>
 #include <mutex>
 
-// TODO: somewhere along the line, a single character at the end of the name fields gets lost
-// i have no idea why
-
 namespace Logging
 {
 
