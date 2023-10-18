@@ -139,6 +139,7 @@ add_executable(
     ${MAIN_EXECUTABLE_NAME}
     Helpers/UserIDLock.cpp
     Helpers/JSONEvents.cpp
+    Helpers/SSE.cpp
     HTML/HTMLTemplate.cpp
     Input/LeapConnection.cpp
     Input/LeapMotionGestureProvider.cpp
@@ -168,7 +169,7 @@ target_link_libraries(${MAIN_EXECUTABLE_NAME} PRIVATE raylib LeapSDK::LeapC)
 # ============================================================
 
 add_executable(${TEST_LOGGING} Programs/Testing/LoggerTest.cpp Programs/UserStudy/Logging.cpp)
-
+target_include_directories(${TEST_LOGGING} PRIVATE ${INCLUDE_MAIN})
 target_compile_features(${TEST_LOGGING} PRIVATE cxx_std_20)
 
 # ============================================================
@@ -185,7 +186,7 @@ target_compile_features(${TEST_TEMPLATING} PRIVATE cxx_std_20)
 # ============ SSE reliability test configuration ============
 # ============================================================
 
-add_executable(${TEST_SSE} Programs/Testing/SSEReliabilityTest.cpp)
+add_executable(${TEST_SSE} Programs/Testing/SSEReliabilityTest.cpp Helpers/SSE.cpp)
 add_dependencies(${TEST_SSE} staticFiles)
 target_include_directories(${TEST_SSE} PRIVATE ${INCLUDE_MAIN} ${INCLUDE_CPP_HTTPLIB})
 target_compile_features(${TEST_SSE} PRIVATE cxx_std_20)
