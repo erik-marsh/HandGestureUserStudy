@@ -15,64 +15,59 @@
 </head>
 
 <body>
-  <!-- TODO: nicer colors -->
   <div class="container-fluid bg-light p-0" style="height: 100vh;">
-
-    <header class="navbar navbar-light bg-info">
-      <div class="navbar-text mx-3">
-        Current mouse control scheme: {% expected_text %}
-      </div>
-      <div class="navbar-text mx-3">
-        Current task: {% expected_text %} of {% expected_text %}
-      </div>
-    </header>
-
-    <main class="m-3">
-      <div class="col-8">
-
-        <div class="row mx-0 mb-1 user-study-field-text-label">
-          To:
+    <main class="mx-3">
+      <div class="col">
+        <div class="row mb-3"></div>
+        <div class="row mb-3">
+          <h1>{% expected_text %} control scheme &mdash; task {% expected_text %} of {% expected_text %}</h1>
         </div>
-        <div class="row mx-0 mb-3">
-          <div class="col user-study-field user-study-field-text nopad" data-field-index="0">
-            <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
-              disabled></textarea>
-            <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
+        <div class="row">
+          <div class="col-8">
+            <div class="row mx-0 mb-1 $0">
+              To:
+            </div>
+            <div class="row mx-0 mb-3">
+              <div class="col user-study-field user-study-field-text nopad" data-field-index="0">
+                <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+                  disabled></textarea>
+                <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
 {% expected_text %}
-            </textarea>
-          </div>
-        </div>
+                </textarea>
+              </div>
+            </div>
 
-        <div class="row mx-0 mb-1 user-study-field-text-label">
-          Email body:
-        </div>
-        <div class="row mx-0 mb-3">
-          <div class="col user-study-field user-study-field-text nopad" data-field-index="1">
-            <textarea class="form-control user-study-textarea input" data-input-state="future" rows="10"
-              disabled></textarea>
-            <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="10" disabled>
+            <div class="row mx-0 mb-1 $0">
+              Email body:
+            </div>
+            <div class="row mx-0 mb-3">
+              <div class="col user-study-field user-study-field-text nopad" data-field-index="1">
+                <textarea class="form-control user-study-textarea input" data-input-state="future" rows="10"
+                  disabled></textarea>
+                <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="10" disabled>
 {% expected_text %}
-            </textarea>
-          </div>
-        </div>
+                </textarea>
+              </div>
+            </div>
 
-        <div class="row mx-0 mb-3">
-          <div class="col user-study-field user-study-field-button nopad" data-field-index="2">
-            <button class="form-control" disabled>Send</button>
-          </div>
-        </div>
+            <div class="row mx-0 mb-3">
+              <div class="col user-study-field user-study-field-button nopad" data-field-index="2">
+                <button class="form-control" disabled>Send</button>
+              </div>
+            </div>
 
-        <div id="loading" style="display: none;">
-          <div class="d-flex justify-content-center mb-3">
-            <div class="spinner-border"></div>
+            <div id="loading" style="display: none;">
+              <div class="d-flex justify-content-center mb-3">
+                <div class="spinner-border"></div>
+              </div>
+              <div class="d-flex justify-content-center">
+                <p>If the study has not yet loaded, please refresh the page by pressing F5.</p>
+              </div>
+            </div>
           </div>
-          <div class="d-flex justify-content-center">
-            <p>If the study has not yet loaded, please refresh the page by pressing F5.</p>
-          </div>
+          <div class="col"></div>
         </div>
-
       </div>
-      <div class="col"></div>
     </main>
   </div>
 </body>
