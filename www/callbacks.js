@@ -103,6 +103,7 @@ const __stateHandler = {
             else if (Array.from(userStudyButtons).includes(field)) {
                 const buttonSubfield = field.getElementsByTagName("button")[0];
                 buttonSubfield.removeAttribute("disabled");
+                buttonSubfield.className += " btn btn-primary";
             }
         }
 
