@@ -140,6 +140,10 @@ Array.from(userStudyTextFields).forEach(field => {
         timestampQueue: [],
         inputCharQueue: [],
         notify() {
+            console.log(this.keystrokeQueue);
+            console.log(this.timestampQueue);
+            console.log(this.inputCharQueue);
+
             // TODO: the user must be reminded that they are not to:
             //     Use arrow keys (this is prevented)
             //     Use the delete key (this is prevented)
