@@ -161,7 +161,7 @@ Array.from(userStudyTextFields).forEach(field => {
 
             if (keystroke === "Backspace") {
                 assembledString = assembledString.slice(0, assembledString.length - 1);
-            } else {
+            } else if (inputChar != null && inputChar != "") {
                 assembledString += inputChar;
             }
 
