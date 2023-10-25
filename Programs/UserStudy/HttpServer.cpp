@@ -27,14 +27,14 @@ namespace Http
 using Req = httplib::Request;
 using Res = httplib::Response;
 
-const std::string baseDir = "Logs";
+const std::string LOG_BASE_DIR = "Logs";
 
 void HttpServerLoop(SyncState& syncState)
 {
     std::cout << "[main] Starting HTTP thread...\n";
 
-    if (!std::filesystem::exists(baseDir))
-        std::filesystem::create_directory(baseDir);
+    if (!std::filesystem::exists(LOG_BASE_DIR))
+        std::filesystem::create_directory(LOG_BASE_DIR);
 
     httplib::Server server;
     if (!server.set_mount_point("/", "./www/"))
@@ -45,7 +45,7 @@ void HttpServerLoop(SyncState& syncState)
     }
 
     // Set up objects for use by the server
-    Helpers::StudyState state{};
+    Helpers::StudyStateMachine state;
     Helpers::UserIDLock userIdLock("ids.lock");
 
     HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
@@ -85,7 +85,9 @@ void HttpServerLoop(SyncState& syncState)
 
     auto startHandler = [&state, &syncState, &dispatcher, &userIdLock](const Req& req, Res& res)
     {
-        if (state.isStudyStarted)
+        using enum Helpers::StudyStateMachine::State;
+
+        if (state.GetState() != Start)
         {
             res.status = 400;
             return;
@@ -94,49 +96,50 @@ void HttpServerLoop(SyncState& syncState)
         auto result = Helpers::ParseRequest<Helpers::Start>(req.body);
         if (result.HasValue())
         {
+            int userId = result.Value().userId;
+
             // check if the user ID has been used already
-            if (userIdLock.IsLocked(result.Value().userId))
+            if (userIdLock.IsLocked(userId))
             {
-                std::cout << std::format("[HTTP] User ID {} is already in use.\n",
-                                         result.Value().userId);
+                std::cout << std::format("[HTTP] User ID {} is already in use.\n", userId);
                 res.status = 403;
                 return;
             }
 
-            state.isStudyStarted = true;
-            state.userId = result.Value().userId;
-            state.counterbalancingIndex = state.userId % 2;
+            state.InitializeUser(userId);
+            state.Proceed();
 
-            userIdLock.Lock(state.userId);
-            std::stringstream fsss;
-            fsss << baseDir << "/user" << state.userId << ".log";
-            std::string logFilename = fsss.str();
+            userIdLock.Lock(state.GetUserId());
+            std::string logFilename = std::format("{}/user{}.log", LOG_BASE_DIR, userId);
             syncState.logger.OpenLogFile(logFilename);
             syncState.isLogging = true;
 
             std::cout << std::format(
-                "[HTTP] Starting user study for user ID {} (counterbalancing index={}).\n",
-                state.userId, state.counterbalancingIndex);
+                "[HTTP] Starting user study for user ID {} (counterbalancing index={}).\n", userId,
+                state.GetCounterbalancingIndex());
             dispatcher.SendEvent("event: proceed\r\ndata: starting tutorial\r\n\r\n");
 
             res.status = 200;  // 200 OK
             return;
         }
+
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
     auto tutorialProgressHandler = [&state, &dispatcher](const Req& req, Res& res)
     {
-        if (!state.isStudyStarted || state.isTutorialDone)
+        using enum Helpers::StudyStateMachine::State;
+
+        if (state.GetState() != Tutorial)
         {
             res.status = 400;
             return;
         }
 
-        state.isTutorialDone = true;
-        res.status = 200;
-
+        state.Proceed();
         dispatcher.SendEvent("event: proceed\r\ndata: starting user study\r\n\r\n");
+
+        res.status = 200;
     };
 
     auto formTestHandler = [&formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
@@ -199,38 +202,42 @@ void HttpServerLoop(SyncState& syncState)
     auto formHandler = [&state, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
                         &endTemplate, &syncState](const Req& req, Res& res)
     {
-        if (!state.isStudyStarted)
+        using namespace Helpers::StringPools;
+        using enum Helpers::StudyStateMachine::State;
+        using enum Helpers::InputDevice;
+        using enum Helpers::Task;
+
+        if (state.GetState() == Start)
         {
             res.set_content(startTemplate.GetSubstitution(), "text/html");
             return;
         }
 
-        if (!state.isTutorialDone)
+        if (state.GetState() == Tutorial)
         {
             res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
             syncState.isLeapDriverActive.store(true);
             return;
         }
 
-        if (state.isStudyDone)
+        if (state.GetState() == End)
         {
             res.set_content(endTemplate.GetSubstitution(), "text/html");
             return;
         }
 
-        // while in the study:
+        // valid states from here on out: {PracticeTask, Task}
         // we want to reset mouse position before each task
         Input::Mouse::MoveAbsolute(100, 100);
 
         std::string device;
-        switch (Helpers::COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex]
-                                                  [state.currentDeviceIndex])
+        switch (state.GetCurrInputDevice())
         {
-            case Helpers::InputDevice::Mouse:
+            case Mouse:
                 device = "Mouse";
                 syncState.isLeapDriverActive.store(false);
                 break;
-            case Helpers::InputDevice::LeapMotion:
+            case LeapMotion:
                 device = "Leap Motion";
                 syncState.isLeapDriverActive.store(true);
                 break;
@@ -242,12 +249,12 @@ void HttpServerLoop(SyncState& syncState)
 
         std::vector<std::string> strings;
         strings.push_back(device);
-        strings.push_back(std::to_string(state.currentTaskIndex + 1));
+        strings.push_back(std::to_string(state.GetTaskIndex() + 1));
         strings.push_back(std::to_string(Helpers::TASK_SEQUENCE.size()));
-        using namespace Helpers::StringPools;
-        switch (Helpers::TASK_SEQUENCE[state.currentTaskIndex])
+
+        switch (state.GetCurrTask())
         {
-            case Helpers::Task::Form:
+            case Form:
                 strings.emplace(strings.begin(), device);
                 strings.push_back(SelectRandom(Names));
                 strings.push_back(SelectRandom(EmailAddresses));
@@ -258,7 +265,7 @@ void HttpServerLoop(SyncState& syncState)
                 formTemplate.Substitute(strings);
                 res.set_content(formTemplate.GetSubstitution(), "text/html");
                 break;
-            case Helpers::Task::Email:
+            case Email:
                 strings.push_back(SelectRandom(EmailAddresses));
                 strings.push_back(SelectRandom(EmailBodyText));
                 emailTemplate.Substitute(strings);
@@ -317,7 +324,9 @@ void HttpServerLoop(SyncState& syncState)
 
     auto eventsTaskHandler = [&state, &syncState, &dispatcher](const Req& req, Res& res)
     {
-        if (state.isStudyDone)
+        using enum Helpers::StudyStateMachine::State;
+
+        if (state.GetState() == End)
         {
             res.status = 400;
             return;
@@ -326,19 +335,23 @@ void HttpServerLoop(SyncState& syncState)
         auto result = Helpers::ParseRequest<Helpers::EventTaskCompletion>(req.body);
         if (result.HasValue())
         {
+            using enum Helpers::StudyStateMachine::State;
+
             syncState.logger.Log(result.Value().data);
+            state.Proceed();
 
-            state.currentTaskIndex++;
-            if (state.currentTaskIndex == Helpers::TASK_SEQUENCE.size())
-            {
-                state.currentTaskIndex = 0;
-                state.currentDeviceIndex++;
-            }
+            std::cout << std::format(
+                "[HTTP] Study state"
+                "\n    Done?: {}"
+                "\n    userId: {}"
+                "\n    counterbalancingIndex: {}"
+                "\n    currentTaskIndex: {}"
+                "\n    currentDeviceIndex: {}\n",
+                state.GetState() == End, state.GetUserId(), state.GetCounterbalancingIndex(),
+                state.GetTaskIndex(), state.GetDeviceIndex());
 
-            if (state.currentDeviceIndex ==
-                Helpers::COUNTERBALANCING_SEQUENCE[state.counterbalancingIndex].size())
+            if (state.GetState() == End)
             {
-                state.isStudyDone = true;
                 res.status = 200;
                 dispatcher.SendEvent("event: proceed\r\ndata: study is done\r\n\r\n");
                 return;
@@ -346,19 +359,11 @@ void HttpServerLoop(SyncState& syncState)
 
             dispatcher.SendEvent("event: proceed\r\ndata: moving on to next study phase\r\n\r\n");
 
-            std::stringstream ss;
-            ss << "Study state:"
-               << "\n    Done?: " << std::boolalpha << state.isStudyDone
-               << "\n    userId: " << state.userId
-               << "\n    counterbalancingIndex: " << state.counterbalancingIndex
-               << "\n    currentTaskIndex: " << state.currentTaskIndex
-               << "\n    currentDeviceIndex: " << state.currentDeviceIndex << "\n";
-            std::cout << ss.str();
-
             Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
+
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
@@ -368,9 +373,7 @@ void HttpServerLoop(SyncState& syncState)
     server.set_pre_routing_handler(
         [](const Req& req, Res& res)
         {
-            std::stringstream ss;
-            ss << "[HTTP] " << req.method << " [" << req.path << "]\n";
-            std::cout << ss.str();
+            std::cout << std::format("[HTTP] {} {}\n", req.method, req.path);
             return httplib::Server::HandlerResponse::Unhandled;
         });
 
@@ -379,8 +382,8 @@ void HttpServerLoop(SyncState& syncState)
     server.Get("/eventPusher", eventPusherHandler);
 
     server.Post("/quit", quitHandler);
-    server.Post("/start", startHandler);
-    server.Post("/acknowledgeTutorial", tutorialProgressHandler);
+    server.Post("/start", startHandler);                           // TODO: merge these
+    server.Post("/acknowledgeTutorial", tutorialProgressHandler);  // TODO: merge these
     server.Post("/events/click", eventsClickHandler);
     server.Post("/events/keystroke", eventsKeystrokeHandler);
     server.Post("/events/field", eventsFieldHandler);
