@@ -30,7 +30,6 @@ class StudyStateMachine
    public:
     enum class State
     {
-        // Uninitialized,
         Start,
         Tutorial,
         PracticeTask,
