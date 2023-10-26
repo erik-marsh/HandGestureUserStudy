@@ -45,7 +45,7 @@ void HttpServerLoop(SyncState& syncState)
     }
 
     // Set up objects for use by the server
-    Helpers::StudyStateMachine state;
+    Helpers::StudyStateMachine studyControl;
     Helpers::UserIDLock userIdLock("ids.lock");
 
     HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
@@ -83,11 +83,11 @@ void HttpServerLoop(SyncState& syncState)
         syncState.isRunning.store(false);
     };
 
-    auto startHandler = [&state, &syncState, &dispatcher, &userIdLock](const Req& req, Res& res)
+    auto startHandler = [&studyControl, &syncState, &dispatcher, &userIdLock](const Req& req, Res& res)
     {
         using enum Helpers::StudyStateMachine::State;
 
-        if (state.GetState() != Start)
+        if (studyControl.GetState() != Start)
         {
             res.status = 400;
             return;
@@ -106,17 +106,17 @@ void HttpServerLoop(SyncState& syncState)
                 return;
             }
 
-            state.InitializeUser(userId);
-            state.Proceed();
+            studyControl.InitializeUser(userId);
+            studyControl.Proceed();
 
-            userIdLock.Lock(state.GetUserId());
+            userIdLock.Lock(studyControl.GetUserId());
             std::string logFilename = std::format("{}/user{}.log", LOG_BASE_DIR, userId);
             syncState.logger.OpenLogFile(logFilename);
             syncState.isLogging = true;
 
             std::cout << std::format(
                 "[HTTP] Starting user study for user ID {} (counterbalancing index={}).\n", userId,
-                state.GetCounterbalancingIndex());
+                studyControl.GetCounterbalancingIndex());
             dispatcher.SendEvent("event: proceed\r\ndata: starting tutorial\r\n\r\n");
 
             res.status = 200;  // 200 OK
@@ -126,17 +126,17 @@ void HttpServerLoop(SyncState& syncState)
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
-    auto tutorialProgressHandler = [&state, &dispatcher](const Req& req, Res& res)
+    auto tutorialProgressHandler = [&studyControl, &dispatcher](const Req& req, Res& res)
     {
         using enum Helpers::StudyStateMachine::State;
 
-        if (state.GetState() != Tutorial)
+        if (studyControl.GetState() != Tutorial)
         {
             res.status = 400;
             return;
         }
 
-        state.Proceed();
+        studyControl.Proceed();
         dispatcher.SendEvent("event: proceed\r\ndata: starting user study\r\n\r\n");
 
         res.status = 200;
@@ -199,7 +199,7 @@ void HttpServerLoop(SyncState& syncState)
         }
     };
 
-    auto formHandler = [&state, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
+    auto formHandler = [&studyControl, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
                         &endTemplate, &syncState](const Req& req, Res& res)
     {
         using namespace Helpers::StringPools;
@@ -207,20 +207,20 @@ void HttpServerLoop(SyncState& syncState)
         using enum Helpers::InputDevice;
         using enum Helpers::Task;
 
-        if (state.GetState() == Start)
+        if (studyControl.GetState() == Start)
         {
             res.set_content(startTemplate.GetSubstitution(), "text/html");
             return;
         }
 
-        if (state.GetState() == Tutorial)
+        if (studyControl.GetState() == Tutorial)
         {
             res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
             syncState.isLeapDriverActive.store(true);
             return;
         }
 
-        if (state.GetState() == End)
+        if (studyControl.GetState() == End)
         {
             res.set_content(endTemplate.GetSubstitution(), "text/html");
             return;
@@ -231,7 +231,7 @@ void HttpServerLoop(SyncState& syncState)
         Input::Mouse::MoveAbsolute(100, 100);
 
         std::string device;
-        switch (state.GetCurrInputDevice())
+        switch (studyControl.GetCurrInputDevice())
         {
             case Mouse:
                 device = "Mouse";
@@ -249,10 +249,10 @@ void HttpServerLoop(SyncState& syncState)
 
         std::vector<std::string> strings;
         strings.push_back(device);
-        strings.push_back(std::to_string(state.GetTaskIndex() + 1));
+        strings.push_back(std::to_string(studyControl.GetTaskIndex() + 1));
         strings.push_back(std::to_string(Helpers::TASK_SEQUENCE.size()));
 
-        switch (state.GetCurrTask())
+        switch (studyControl.GetCurrTask())
         {
             case Form:
                 strings.emplace(strings.begin(), device);
@@ -322,11 +322,11 @@ void HttpServerLoop(SyncState& syncState)
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
-    auto eventsTaskHandler = [&state, &syncState, &dispatcher](const Req& req, Res& res)
+    auto eventsTaskHandler = [&studyControl, &syncState, &dispatcher](const Req& req, Res& res)
     {
         using enum Helpers::StudyStateMachine::State;
 
-        if (state.GetState() == End)
+        if (studyControl.GetState() == End)
         {
             res.status = 400;
             return;
@@ -338,19 +338,19 @@ void HttpServerLoop(SyncState& syncState)
             using enum Helpers::StudyStateMachine::State;
 
             syncState.logger.Log(result.Value().data);
-            state.Proceed();
+            studyControl.Proceed();
 
             std::cout << std::format(
-                "[HTTP] Study state"
+                "[HTTP] Study studyControl"
                 "\n    Done?: {}"
                 "\n    userId: {}"
                 "\n    counterbalancingIndex: {}"
                 "\n    currentTaskIndex: {}"
                 "\n    currentDeviceIndex: {}\n",
-                state.GetState() == End, state.GetUserId(), state.GetCounterbalancingIndex(),
-                state.GetTaskIndex(), state.GetDeviceIndex());
+                studyControl.GetState() == End, studyControl.GetUserId(), studyControl.GetCounterbalancingIndex(),
+                studyControl.GetTaskIndex(), studyControl.GetDeviceIndex());
 
-            if (state.GetState() == End)
+            if (studyControl.GetState() == End)
             {
                 res.status = 200;
                 dispatcher.SendEvent("event: proceed\r\ndata: study is done\r\n\r\n");
