@@ -31,8 +31,9 @@ class StudyStateMachine
     enum class State
     {
         Start,
-        Tutorial,
-        PracticeTask,
+        Instructions,
+        TutorialTask,
+        PostTutorial,
         Task,
         End
     };
@@ -62,10 +63,10 @@ class StudyStateMachine
         {
             case State::Start:
             {
-                currState = State::Tutorial;
+                currState = State::Instructions;
                 break;
             }
-            case State::Tutorial:
+            case State::Instructions:
             {
                 // TODO: implement practice tasks
                 currState = State::Task;
@@ -73,7 +74,12 @@ class StudyStateMachine
                 currTaskIndex = 0;
                 break;
             }
-            case State::PracticeTask:
+            case State::TutorialTask:
+            {
+                // TODO: see above
+                break;
+            }
+            case State::PostTutorial:
             {
                 // TODO: see above
                 break;

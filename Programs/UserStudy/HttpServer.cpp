@@ -171,7 +171,7 @@ void HttpServerLoop(SyncState& syncState)
             return;
         }
 
-        if (studyControl.GetState() == Tutorial)
+        if (studyControl.GetState() == Instructions)
         {
             res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
             syncState.isLeapDriverActive.store(true);
@@ -184,7 +184,7 @@ void HttpServerLoop(SyncState& syncState)
             return;
         }
 
-        // valid states from here on out: {PracticeTask, Task}
+        // valid states from here on out: {TutorialTask, Task}
         // we want to reset mouse position before each task
         Input::Mouse::MoveAbsolute(100, 100);
 
@@ -300,6 +300,13 @@ void HttpServerLoop(SyncState& syncState)
     server.Post("/start", startHandler);
     server.Post("/proceed", proceedHandler);
     // TODO: now that the above handler exists, we can implement a proper tutorial
+    //       the things that it needs are as follows:
+    //        1. templates that mirror the actual tasks,
+    //           but have a notice that they are tutorial tasks
+    //        2. modified JS that does not submit events (as not to log stuff)
+    //        3. State machine logic and HTTP handler updates to accomodate this
+    //        4. a post-tutorial page that congratulates the user and tells them
+    //           that they will be doing the same thing but for real this time
     server.Post("/quit", quitHandler);
 
     server.Post("/events/click", eventsClickHandler);
