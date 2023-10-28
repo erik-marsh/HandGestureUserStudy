@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <sstream>
+#include <format>
 
 namespace Helpers
 {
@@ -42,15 +43,13 @@ void EventDispatcher::WaitEvent(httplib::DataSink& sink)
     // lock is released
 }
 
-void EventDispatcher::SendEvent(const std::string& newMessage)
+void EventDispatcher::SendEvent(std::string_view newMessage)
 {
     if (programTerminated)
         return;
 
     std::lock_guard<std::mutex> lock(queueMutex);
-    std::stringstream ss;
-    ss << "id: " << eventId.load() << "\n" << newMessage;
-    messageQueue.push(ss.str());
+    messageQueue.push(std::format("id: {}\r\n{}", eventId.load(), newMessage));
     queueSize = messageQueue.size();
     eventId++;
     cv.notify_all();

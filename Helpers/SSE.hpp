@@ -6,6 +6,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <string_view>
 
 namespace Helpers
 {
@@ -14,7 +15,7 @@ class EventDispatcher
 {
    public:
     void WaitEvent(httplib::DataSink& sink);
-    void SendEvent(const std::string& newMessage);
+    void SendEvent(std::string_view newMessage);
     void ShutDown();
 
    private:

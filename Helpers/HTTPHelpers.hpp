@@ -4,8 +4,9 @@
 
 #include <Helpers/Expected.hpp>
 #include <Helpers/JSONEvents.hpp>
-#include <sstream>
 #include <exception>
+#include <format>
+#include <sstream>
 
 namespace Helpers
 {
@@ -33,11 +34,12 @@ Expected<int, Helpers::ParseError> ParseInt(const std::string& value, int min, i
     }
 }
 
-auto printRequest = [](const httplib::Request& req, httplib::Response& res)
+auto postRoutingDebugPrint = [](const httplib::Request& req, httplib::Response& res)
 {
-    std::stringstream ss;
-    ss << "[HTTP] [" << req.path << "] " << req.body << "\n";
-    std::cout << ss.str();
+    if (req.method == "POST")
+        std::cout << std::format("[HTTP] {} {} => {}\n", req.method, req.path, req.body);
+    else
+        std::cout << std::format("[HTTP] {} {}\n", req.method, req.path);
 };
 
 auto parseErrorHandler =
@@ -65,11 +67,7 @@ auto parseErrorHandler =
 };
 
 auto errorHandler = [](const httplib::Request& req, httplib::Response& res)
-{
-    std::stringstream ss;
-    ss << "<h1>Error " << res.status << "</h1>";
-    res.set_content(ss.str(), "text/html");
-};
+{ res.set_content(std::format("<h1>Error {}</h1>", res.status), "text/html"); };
 
 auto exceptionHandler =
     [](const httplib::Request& req, httplib::Response& res, std::exception_ptr exp)

@@ -84,12 +84,17 @@ const __stateHandler = {
                 console.log("[Study Control] Task completed.");
                 sendEventsToServer(clickEvents, "click");
                 clickEvents = [];
-                sendEventsToServer({
+                const taskEvent = {
                     timestampMillis: completionTime,
                     taskIndex: -1,  // TODO: idk how i want to retrieve this value tbh
-                }, "task");
-
+                };
+                sendEventsToServer(taskEvent, "task");
                 loadingField.removeAttribute("style");
+                fetch("/proceed", {
+                    method: "POST",
+                    body: "{}"
+                });
+                return;
             }
 
             // then enable the next field

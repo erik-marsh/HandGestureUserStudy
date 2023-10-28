@@ -27,7 +27,8 @@ namespace Http
 using Req = httplib::Request;
 using Res = httplib::Response;
 
-const std::string LOG_BASE_DIR = "Logs";
+constexpr std::string_view LOG_BASE_DIR = "Logs";
+constexpr std::string_view SSE_PROCEED_MESSAGE = "event: proceed\r\ndata: null\r\n\r\n";
 
 void HttpServerLoop(SyncState& syncState)
 {
@@ -70,20 +71,8 @@ void HttpServerLoop(SyncState& syncState)
                                          });
     };
 
-    auto quitHandler = [&server, &syncState, &dispatcher](const Req& req, Res& res)
-    {
-        std::cout << "[HTTP] Server got shutdown signal, shutting down threads...\n";
-        dispatcher.ShutDown();
-        {
-            std::lock_guard<std::mutex> lock(Helpers::heartbeatMutex);
-            Helpers::killHeartbeat = true;
-            Helpers::heartbeatCV.notify_all();
-        }
-        server.stop();
-        syncState.isRunning.store(false);
-    };
-
-    auto startHandler = [&studyControl, &syncState, &dispatcher, &userIdLock](const Req& req, Res& res)
+    auto startHandler =
+        [&studyControl, &syncState, &dispatcher, &userIdLock](const Req& req, Res& res)
     {
         using enum Helpers::StudyStateMachine::State;
 
@@ -126,81 +115,50 @@ void HttpServerLoop(SyncState& syncState)
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
-    auto tutorialProgressHandler = [&studyControl, &dispatcher](const Req& req, Res& res)
+    auto proceedHandler = [&studyControl, &dispatcher](const Req& req, Res& res)
     {
         using enum Helpers::StudyStateMachine::State;
 
-        if (studyControl.GetState() != Tutorial)
+        // proceeding from Start is directly handled by the user ID submission handler
+        // this is because the user id needs to be initialized in order for
+        // studyControl to be properly initialized
+        if (studyControl.GetState() == Start)
         {
             res.status = 400;
             return;
         }
 
-        studyControl.Proceed();
-        dispatcher.SendEvent("event: proceed\r\ndata: starting user study\r\n\r\n");
+        // TODO: return 428 Precondition Required if certain data has not been submitted yet
+        studyControl.Proceed();                     // advance the server's internal state
+        dispatcher.SendEvent(SSE_PROCEED_MESSAGE);  // tell the client to refresh the page
 
-        res.status = 200;
+        std::cout << std::format(
+            "[HTTP] Study studyControl"
+            "\n    Done?: {}"
+            "\n    userId: {}"
+            "\n    counterbalancingIndex: {}"
+            "\n    currentTaskIndex: {}"
+            "\n    currentDeviceIndex: {}\n",
+            studyControl.GetState() == End, studyControl.GetUserId(),
+            studyControl.GetCounterbalancingIndex(), studyControl.GetTaskIndex(),
+            studyControl.GetDeviceIndex());
     };
 
-    auto formTestHandler = [&formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
-                            &endTemplate](const Req& req, Res& res)
+    auto quitHandler = [&server, &syncState, &dispatcher](const Req& req, Res& res)
     {
-        if (!req.has_param("target"))
+        std::cout << "[HTTP] Server got shutdown signal, shutting down threads...\n";
+        dispatcher.ShutDown();
         {
-            res.status = 404;
-            return;
+            std::lock_guard<std::mutex> lock(Helpers::heartbeatMutex);
+            Helpers::killHeartbeat = true;
+            Helpers::heartbeatCV.notify_all();
         }
-
-        auto target = req.get_param_value("target");
-        if (target == "start")
-        {
-            res.set_content(startTemplate.GetSubstitution(), "text/html");
-        }
-        else if (target == "tutorial")
-        {
-            res.set_content(tutorialTemplate.GetSubstitution(), "text/html");
-        }
-        else if (target == "end")
-        {
-            res.set_content(endTemplate.GetSubstitution(), "text/html");
-        }
-        else if (target == "form")
-        {
-            using namespace Helpers::StringPools;
-            std::vector<std::string> strings;
-            strings.push_back("NO_DEVICE");
-            strings.push_back("NO_DEVICE");
-            strings.push_back("0");
-            strings.push_back("0");
-            strings.push_back(SelectRandom(Names));
-            strings.push_back(SelectRandom(EmailAddresses));
-            strings.push_back(SelectRandom(PhysicalAddresses));
-            strings.push_back(SelectRandom(DateOfBirth));
-            strings.push_back(SelectRandom(IdNumbers));
-            strings.push_back(SelectRandom(CardNumbers));
-            formTemplate.Substitute(strings);
-            res.set_content(formTemplate.GetSubstitution(), "text/html");
-        }
-        else if (target == "email")
-        {
-            using namespace Helpers::StringPools;
-            std::vector<std::string> strings;
-            strings.push_back("NO_DEVICE");
-            strings.push_back("0");
-            strings.push_back("0");
-            strings.push_back(SelectRandom(EmailAddresses));
-            strings.push_back(SelectRandom(EmailBodyText));
-            emailTemplate.Substitute(strings);
-            res.set_content(emailTemplate.GetSubstitution(), "text/html");
-        }
-        else
-        {
-            res.status = 404;
-        }
+        server.stop();
+        syncState.isRunning.store(false);
     };
 
-    auto formHandler = [&studyControl, &formTemplate, &emailTemplate, &tutorialTemplate, &startTemplate,
-                        &endTemplate, &syncState](const Req& req, Res& res)
+    auto pageHandler = [&studyControl, &formTemplate, &emailTemplate, &tutorialTemplate,
+                        &startTemplate, &endTemplate, &syncState](const Req& req, Res& res)
     {
         using namespace Helpers::StringPools;
         using enum Helpers::StudyStateMachine::State;
@@ -286,7 +244,6 @@ void HttpServerLoop(SyncState& syncState)
         {
             for (auto event : result.Value().data)
                 syncState.logger.Log(event);
-            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
@@ -301,7 +258,6 @@ void HttpServerLoop(SyncState& syncState)
         {
             for (auto event : result.Value().data)
                 syncState.logger.Log(event);
-            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
@@ -315,7 +271,6 @@ void HttpServerLoop(SyncState& syncState)
         if (result.HasValue())
         {
             syncState.logger.Log(result.Value().data);
-            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
@@ -324,66 +279,29 @@ void HttpServerLoop(SyncState& syncState)
 
     auto eventsTaskHandler = [&studyControl, &syncState, &dispatcher](const Req& req, Res& res)
     {
-        using enum Helpers::StudyStateMachine::State;
-
-        if (studyControl.GetState() == End)
-        {
-            res.status = 400;
-            return;
-        }
-
         auto result = Helpers::ParseRequest<Helpers::EventTaskCompletion>(req.body);
-        if (result.HasValue())
+        if (!result.HasValue())
         {
-            using enum Helpers::StudyStateMachine::State;
-
             syncState.logger.Log(result.Value().data);
-            studyControl.Proceed();
-
-            std::cout << std::format(
-                "[HTTP] Study studyControl"
-                "\n    Done?: {}"
-                "\n    userId: {}"
-                "\n    counterbalancingIndex: {}"
-                "\n    currentTaskIndex: {}"
-                "\n    currentDeviceIndex: {}\n",
-                studyControl.GetState() == End, studyControl.GetUserId(), studyControl.GetCounterbalancingIndex(),
-                studyControl.GetTaskIndex(), studyControl.GetDeviceIndex());
-
-            if (studyControl.GetState() == End)
-            {
-                res.status = 200;
-                dispatcher.SendEvent("event: proceed\r\ndata: study is done\r\n\r\n");
-                return;
-            }
-
-            dispatcher.SendEvent("event: proceed\r\ndata: moving on to next study phase\r\n\r\n");
-
-            Helpers::printRequest(req, res);
             res.status = 200;
             return;
         }
-
         Helpers::parseErrorHandler(req, res, result.Error());
     };
 
     // Hook up the lambdas to the server and begin listening
     server.set_error_handler(Helpers::errorHandler);
     server.set_exception_handler(Helpers::exceptionHandler);
-    server.set_pre_routing_handler(
-        [](const Req& req, Res& res)
-        {
-            std::cout << std::format("[HTTP] {} {}\n", req.method, req.path);
-            return httplib::Server::HandlerResponse::Unhandled;
-        });
+    server.set_post_routing_handler(Helpers::postRoutingDebugPrint);
 
-    server.Get("/", formHandler);
-    server.Get("/test", formTestHandler);
+    server.Get("/", pageHandler);
     server.Get("/eventPusher", eventPusherHandler);
 
+    server.Post("/start", startHandler);
+    server.Post("/proceed", proceedHandler);
+    // TODO: now that the above handler exists, we can implement a proper tutorial
     server.Post("/quit", quitHandler);
-    server.Post("/start", startHandler);                           // TODO: merge these
-    server.Post("/acknowledgeTutorial", tutorialProgressHandler);  // TODO: merge these
+
     server.Post("/events/click", eventsClickHandler);
     server.Post("/events/keystroke", eventsKeystrokeHandler);
     server.Post("/events/field", eventsFieldHandler);
