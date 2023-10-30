@@ -1,6 +1,34 @@
 "use strict";
 
 ///////////////////////////////////////////////////////////////////////////////
+// Script parameters
+///////////////////////////////////////////////////////////////////////////////
+
+// data-callbacks-mode
+//     Instructions,
+//     Tutorial,
+//     UserStudy
+// controls the submission of data and such things
+const modeInstructions = "Instructions";
+const modeTutorial = "Tutorial";
+const modeUserStudy = "UserStudy";
+
+const getScriptMode = () => {
+    let mode = document.currentScript.getAttribute("data-callbacks-mode");
+    if (mode === modeInstructions || mode === modeTutorial || mode === modeUserStudy) {
+        console.log("callbacks.js running in " + mode + " mode.");
+    } else if (mode == null) {
+        console.error("callbacks.js requires an attribute named data-callbacks-mode. Running in Instructions mode by deafult.");
+        mode = "Instructions";
+    } else {
+        console.error("callbacks.js was requested to run in " + mode + " mode, but no such mode exists. Running in Instructions mode instead.");
+        mode = "Instructions";
+    }
+    return mode;
+};
+const mode = getScriptMode();
+
+///////////////////////////////////////////////////////////////////////////////
 // Page elements
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -18,6 +46,9 @@ const totalFields = Array.from(userStudyFields).length;
 ///////////////////////////////////////////////////////////////////////////////
 
 const sendEventsToServer = (eventObject, eventType) => {
+    // we only care about statistics in the real-deal user study
+    if (mode != modeUserStudy) return;
+
     console.log("[DEBUG] Sending events to server...");
     console.log(eventObject);
     fetch(`/events/${eventType}`, {
@@ -31,6 +62,17 @@ const sendEventsToServer = (eventObject, eventType) => {
     });
 };
 
+const sendProceedToServer = () => {
+    // the instructions page simply has an example of text input that is not tied to progress
+    if (mode === modeInstructions) return;
+
+    // these two operations are semantically linked
+    loadingField.removeAttribute("style");
+    fetch("/proceed", {
+        method: "POST",
+        body: "{}"
+    });
+};
 
 ///////////////////////////////////////////////////////////////////////////////
 // Page initialization
@@ -89,11 +131,7 @@ const __stateHandler = {
                     taskIndex: -1,  // TODO: idk how i want to retrieve this value tbh
                 };
                 sendEventsToServer(taskEvent, "task");
-                loadingField.removeAttribute("style");
-                fetch("/proceed", {
-                    method: "POST",
-                    body: "{}"
-                });
+                sendProceedToServer();
                 return;
             }
 
@@ -125,6 +163,19 @@ let state = new Proxy(__state, __stateHandler);
 
 const navigationKeys = ["ArrowDown", "ArrowUp", "ArrowLeft", "ArrowRight", "End", "Home", "PageDown", "PageUp"];
 
+const getResetButton = (field, inputTextarea) => {
+    if (mode != modeInstructions) return null;
+
+    const button = field.getElementsByTagName("button")[0];
+    button.addEventListener("click", e => {
+        inputTextarea.value = "";
+        inputTextarea.removeAttribute("disabled");
+        inputTextarea.setAttribute("data-input-state", "progress");
+        button.setAttribute("disabled", "");
+    });
+    return button;
+}
+
 Array.from(userStudyTextFields).forEach(field => {
     const fieldIndex = parseInt(field.getAttribute("data-field-index"));
     const inputTextarea = field.getElementsByClassName("input")[0];
@@ -133,6 +184,9 @@ Array.from(userStudyTextFields).forEach(field => {
     // leading and trailing whitespace, so we trim those out.
     const expectedString = expectedTextarea.value.trim();
 
+    // only exists in Instructions mode
+    const resetButton = getResetButton(field, inputTextarea);
+
     if (fieldIndex === 0) {
         inputTextarea.removeAttribute("disabled");
         inputTextarea.setAttribute("data-input-state", "progress");
@@ -140,11 +194,11 @@ Array.from(userStudyTextFields).forEach(field => {
 
     let gatheredInputs = [];
 
-    let assembledString = "";
     const sink = {
         keystrokeQueue: [],
         timestampQueue: [],
         inputCharQueue: [],
+        assembledString: "",
         notify() {
             console.log(this.keystrokeQueue);
             console.log(this.timestampQueue);
@@ -166,18 +220,18 @@ Array.from(userStudyTextFields).forEach(field => {
             const inputChar = this.inputCharQueue.shift();
 
             if (keystroke === "Backspace") {
-                assembledString = assembledString.slice(0, assembledString.length - 1);
+                this.assembledString = this.assembledString.slice(0, this.assembledString.length - 1);
             } else if (inputChar != null && inputChar != "") {
-                assembledString += inputChar;
+                this.assembledString += inputChar;
             }
 
             console.log(`[Keystrokes] keystroke=${keystroke}, len=${keystroke.length}`);
             console.log(`[Keystrokes] timestamp=${timestamp}`);
             console.log(`[Keystrokes] inputChar=${inputChar}`);
-            console.log(`[Keystrokes] assembled=${assembledString}`);
+            console.log(`[Keystrokes] assembled=${this.assembledString}`);
 
-            const equalSoFar = expectedString.startsWith(assembledString);
-            const equality = expectedString === assembledString;
+            const equalSoFar = expectedString.startsWith(this.assembledString);
+            const equality = expectedString === this.assembledString;
 
             if (keystroke != "Backspace") {
                 gatheredInputs.push({
@@ -194,17 +248,30 @@ Array.from(userStudyTextFields).forEach(field => {
             }
 
             if (equality) {
+                inputTextarea.setAttribute("disabled", "");
+                inputTextarea.setAttribute("data-input-state", "completed");
+
+                if (mode === modeInstructions) {
+                    resetButton.removeAttribute("disabled");
+                    this.clear();
+                    return;
+                }
+
                 console.log("[Keystrokes] Field has been completed, moving on...");
                 console.log(`[Keystrokes]     Last key that was pressed: ${keystroke.key}`);
                 console.log(`[Keystrokes]     Current equality value: ${equality}`);
-                inputTextarea.setAttribute("disabled", "");
-                inputTextarea.setAttribute("data-input-state", "completed");
                 field.removeEventListener("keydown", keydownListener);
                 field.removeEventListener("input", inputListener)
 
                 sendEventsToServer(gatheredInputs, "keystroke");
                 state.currentField++;
             }
+        },
+        clear() {
+            this.keystrokeQueue = [];
+            this.timestampQueue = [];
+            this.inputCharQueue = [];
+            this.assembledString = "";
         }
     }
 
@@ -222,9 +289,9 @@ Array.from(userStudyTextFields).forEach(field => {
 
         // we can still press backspace when there is no input
         // so we need to prevent the appending of this backspace to keep the lists in sync
-        if (assembledString.length === 0 && e.key === "Backspace")
+        if (sink.assembledString.length === 0 && e.key === "Backspace")
             return;
-        
+
         sink.keystrokeQueue.push(e.key);
         sink.timestampQueue.push(timestampMillis);
     };

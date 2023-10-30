@@ -1,5 +1,6 @@
+// name conflict with loadingField in callbacks.js
+const loadingFieldInstructions = document.getElementById("loading");
 const proceedButton = document.getElementById("proceed");
-const loadingField = document.getElementById("loading");
 
 const proceedListener = async e => {
     const res = await fetch("/proceed", {
@@ -8,7 +9,7 @@ const proceedListener = async e => {
     });
 
     if (res.ok) {
-        loadingField.removeAttribute("style");
+        loadingFieldInstructions.removeAttribute("style");
         proceedButton.removeEventListener("click", proceedListener);
         return;
     }
