@@ -192,12 +192,11 @@ Array.from(userStudyTextFields).forEach(field => {
         inputTextarea.setAttribute("data-input-state", "progress");
     }
 
-    let gatheredInputs = [];
-
     const sink = {
         keystrokeQueue: [],
         timestampQueue: [],
         inputCharQueue: [],
+        gatheredInputs: [],
         assembledString: "",
         notify() {
             console.log(this.keystrokeQueue);
@@ -234,7 +233,7 @@ Array.from(userStudyTextFields).forEach(field => {
             const equality = expectedString === this.assembledString;
 
             if (keystroke != "Backspace") {
-                gatheredInputs.push({
+                this.gatheredInputs.push({
                     timestampMillis: timestamp,
                     wasCorrect: equalSoFar,
                     key: inputChar
@@ -263,7 +262,7 @@ Array.from(userStudyTextFields).forEach(field => {
                 field.removeEventListener("keydown", keydownListener);
                 field.removeEventListener("input", inputListener)
 
-                sendEventsToServer(gatheredInputs, "keystroke");
+                sendEventsToServer(this.gatheredInputs, "keystroke");
                 state.currentField++;
             }
         },
@@ -271,6 +270,7 @@ Array.from(userStudyTextFields).forEach(field => {
             this.keystrokeQueue = [];
             this.timestampQueue = [];
             this.inputCharQueue = [];
+            this.gatheredInputs = [];
             this.assembledString = "";
         }
     }
