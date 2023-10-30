@@ -68,20 +68,34 @@ class StudyStateMachine
             }
             case State::Instructions:
             {
-                // TODO: implement practice tasks
-                currState = State::Task;
+                currState = State::TutorialTask;
                 currDeviceIndex = 0;
                 currTaskIndex = 0;
                 break;
             }
             case State::TutorialTask:
             {
-                // TODO: see above
+                const auto& cbSeq = COUNTERBALANCING_SEQUENCE[counterbalancingIndex];
+
+                currTaskIndex++;
+                if (currTaskIndex == TASK_SEQUENCE.size())
+                {
+                    currTaskIndex = 0;
+                    currDeviceIndex++;
+                }
+                if (currDeviceIndex == cbSeq.size())
+                {
+                    currTaskIndex = 0;
+                    currDeviceIndex = 0;
+                    currState = State::PostTutorial;
+                }
                 break;
             }
             case State::PostTutorial:
             {
-                // TODO: see above
+                currState = State::Task;
+                currDeviceIndex = 0;
+                currTaskIndex = 0;
                 break;
             }
             case State::Task:

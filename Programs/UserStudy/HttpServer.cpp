@@ -52,8 +52,11 @@ void HttpServerLoop(SyncState& syncState)
     HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
     HTML::HTMLTemplate tutorialTemplate("HTMLTemplates/instructionsPage.html");
     HTML::HTMLTemplate endTemplate("HTMLTemplates/endPage.html");
+    HTML::HTMLTemplate postTutorialTemplate("HTMLTemplates/postTutorial.html");
     HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
+    HTML::HTMLTemplate formTemplateTutorial("HTMLTemplates/formTemplateTutorial.html");
     HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
+    HTML::HTMLTemplate emailTemplateTutorial("HTMLTemplates/emailTemplateTutorial.html");
 
     Helpers::EventDispatcher dispatcher;
     auto r_isRunning = std::ref(syncState.isRunning);
@@ -157,7 +160,8 @@ void HttpServerLoop(SyncState& syncState)
         syncState.isRunning.store(false);
     };
 
-    auto pageHandler = [&studyControl, &formTemplate, &emailTemplate, &tutorialTemplate,
+    auto pageHandler = [&studyControl, &formTemplate, &formTemplateTutorial, &emailTemplate,
+                        &emailTemplateTutorial, &tutorialTemplate, &postTutorialTemplate,
                         &startTemplate, &endTemplate, &syncState](const Req& req, Res& res)
     {
         using namespace Helpers::StringPools;
@@ -181,6 +185,12 @@ void HttpServerLoop(SyncState& syncState)
         if (studyControl.GetState() == End)
         {
             res.set_content(endTemplate.GetSubstitution(), "text/html");
+            return;
+        }
+
+        if (studyControl.GetState() == PostTutorial)
+        {
+            res.set_content(postTutorialTemplate.GetSubstitution(), "text/html");
             return;
         }
 
@@ -213,6 +223,7 @@ void HttpServerLoop(SyncState& syncState)
         switch (studyControl.GetCurrTask())
         {
             case Form:
+            {
                 strings.emplace(strings.begin(), device);
                 strings.push_back(SelectRandom(Names));
                 strings.push_back(SelectRandom(EmailAddresses));
@@ -220,19 +231,42 @@ void HttpServerLoop(SyncState& syncState)
                 strings.push_back(SelectRandom(DateOfBirth));
                 strings.push_back(SelectRandom(IdNumbers));
                 strings.push_back(SelectRandom(CardNumbers));
-                formTemplate.Substitute(strings);
-                res.set_content(formTemplate.GetSubstitution(), "text/html");
+
+                if (studyControl.GetState() == TutorialTask)
+                {
+                    formTemplateTutorial.Substitute(strings);
+                    res.set_content(formTemplateTutorial.GetSubstitution(), "text/html");
+                }
+                else if (studyControl.GetState() == Task)
+                {
+                    formTemplate.Substitute(strings);
+                    res.set_content(formTemplate.GetSubstitution(), "text/html");
+                }
                 break;
+            }
             case Email:
+            {
                 strings.push_back(SelectRandom(EmailAddresses));
                 strings.push_back(SelectRandom(EmailBodyText));
-                emailTemplate.Substitute(strings);
-                res.set_content(emailTemplate.GetSubstitution(), "text/html");
+
+                if (studyControl.GetState() == TutorialTask)
+                {
+                    emailTemplateTutorial.Substitute(strings);
+                    res.set_content(emailTemplateTutorial.GetSubstitution(), "text/html");
+                }
+                else if (studyControl.GetState() == Task)
+                {
+                    emailTemplate.Substitute(strings);
+                    res.set_content(emailTemplate.GetSubstitution(), "text/html");
+                }
                 break;
+            }
             default:
+            {
                 std::cout << "[HTTP] Something went horribly wrong...\n";
                 res.status = 500;
                 break;
+            }
         }
     };
 

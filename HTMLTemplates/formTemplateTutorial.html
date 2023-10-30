@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-9ndCyUaIbzAi2FUVXJi0CjmCapSmO7SnpJef0486qhLnuZ2cdeRhO02iuK6FUUVM" crossorigin="anonymous">
+  <link rel="stylesheet" href="forms.css">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.min.js"
+    integrity="sha384-fbbOQedDUMZZ5KreZpsbe1LCZPVmfTnH7ois6mU1QK+m14rQ1l2bGBq41eYeM/fS"
+    crossorigin="anonymous"></script>
+  <script src="disableTabNavigation.js"></script> <!-- deliberately non-deferred -->
+  <script src="callbacks.js" data-callbacks-mode="Tutorial" defer></script>
+  <script src="sse.js" defer></script>
+  <script src="notifyDeviceModal.js" defer></script>
+  <!-- favicon import -->
+  <!-- DISCLAIMER: As a result, this project is associated with the University of Nevada, Reno Department of Computer Science and Engineering. -->
+  <link rel="icon" type="image/png" sizes="32x32" href="https://www.unr.edu/Assets/Icons/other/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="https://www.unr.edu/Assets/Icons/other/favicon-16x16.png">
+</head>
+
+<body>
+  <div class="modal fade" id="notifyCurrentDevice" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title" id="notifyCurrentDeviceLabel">Attention!</h1>
+        </div>
+        <div class="modal-body">
+          You will now be using the {% expected_text %} to control the cursor.
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="container-fluid bg-light p-0" style="height: 100vh;">
+    <main class="mx-3">
+      <div class="col">
+        <div class="row mb-3"></div>
+        <div class="row mb-3">
+          <h1>[Practice] {% expected_text %} control scheme &mdash; task {% expected_text %} of {% expected_text %}</h1>
+        </div>
+        <div class="row">
+          <div class="col-3">
+              <div class="row mx-0 mb-1 $0">
+                Name
+              </div>
+              <div class="row mx-0 mb-3">
+                <div class="col user-study-field user-study-field-text nopad" data-field-index="0">
+                  <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+                    disabled></textarea>
+                  <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
+{% expected_text %}
+                  </textarea>
+                </div>
+              </div>
+
+              <div class="row mx-0 mb-1 $0">
+                Email Address
+              </div>
+              <div class="row mx-0 mb-3">
+                <div class="col user-study-field user-study-field-text nopad" data-field-index="1">
+                  <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+                    disabled></textarea>
+                  <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
+{% expected_text %}
+                  </textarea>
+                </div>
+              </div>
+
+              <div class="row mx-0 mb-1 $0">
+                Physical Address
+              </div>
+              <div class="row mx-0 mb-3">
+                <div class="col user-study-field user-study-field-text nopad" data-field-index="2">
+                  <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+                    disabled></textarea>
+                  <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
+{% expected_text %}
+                  </textarea>
+                </div>
+              </div>
+
+              <div class="row mx-0 mb-1 $0">
+                Date of Birth
+              </div>
+              <div class="row mx-0 mb-3">
+                <div class="col user-study-field user-study-field-text nopad" data-field-index="3">
+                  <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+                    disabled></textarea>
+                  <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
+{% expected_text %}
+                  </textarea>
+                </div>
+              </div>
+
+              <div class="row mx-0 mb-1 $0">
+                ID Number
+              </div>
+              <div class="row mx-0 mb-3">
+                <div class="col user-study-field user-study-field-text nopad" data-field-index="4">
+                  <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+                    disabled></textarea>
+                  <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
+{% expected_text %}
+                  </textarea>
+                </div>
+              </div>
+
+              <div class="row mx-0 mb-1 $0">
+                Card Number
+              </div>
+              <div class="row mx-0 mb-3">
+                <div class="col user-study-field user-study-field-text nopad" data-field-index="5">
+                  <textarea class="form-control user-study-textarea input" data-input-state="future" rows="1"
+                    disabled></textarea>
+                  <textarea class="form-control user-study-textarea expected text-body-tertiary" rows="1" disabled>
+{% expected_text %}
+                  </textarea>
+                </div>
+              </div>
+
+              <div class="row mx-0 mb-3">
+                <div class="col user-study-field user-study-field-button nopad" data-field-index="6">
+                  <button class="form-control" disabled>Next</button>
+                </div>
+              </div>
+
+              <div id="loading" style="display: none;">
+                <div class="d-flex justify-content-center mb-3">
+                  <div class="spinner-border"></div>
+                </div>
+                <div class="d-flex justify-content-center">
+                  <p>If the next page has not yet loaded, please refresh the page by pressing F5.</p>
+                </div>
+              </div>
+            </div>
+            <div class="col"></div>
+          </div>
+        </div>
+    </main>
+  </div>
+</body>
+
+</html>
