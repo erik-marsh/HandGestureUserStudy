@@ -50,7 +50,7 @@ void HttpServerLoop(SyncState& syncState)
     Helpers::UserIDLock userIdLock("ids.lock");
 
     HTML::HTMLTemplate startTemplate("HTMLTemplates/startPage.html");
-    HTML::HTMLTemplate tutorialTemplate("HTMLTemplates/tutorialPage.html");
+    HTML::HTMLTemplate tutorialTemplate("HTMLTemplates/instructionsPage.html");
     HTML::HTMLTemplate endTemplate("HTMLTemplates/endPage.html");
     HTML::HTMLTemplate formTemplate("HTMLTemplates/formTemplate.html");
     HTML::HTMLTemplate emailTemplate("HTMLTemplates/emailTemplate.html");
