@@ -314,7 +314,7 @@ void HttpServerLoop(SyncState& syncState)
     auto eventsTaskHandler = [&studyControl, &syncState, &dispatcher](const Req& req, Res& res)
     {
         auto result = Helpers::ParseRequest<Helpers::EventTaskCompletion>(req.body);
-        if (!result.HasValue())
+        if (result.HasValue())
         {
             syncState.logger.Log(result.Value().data);
             res.status = 200;
