@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 # event names
 EVENT_CLICK = "Click"
 EVENT_CURSOR = "CursorPosition"
@@ -6,50 +8,38 @@ EVENT_FIELD = "FieldCompletion"
 EVENT_TASK = "TaskCompletion"
 
 
-def make_click_event(tokens: list[str]) -> dict:
-    return {
-        "type": EVENT_CLICK,
-        "timestamp": int(tokens[0]),
-        "target": tokens[1],
-        # assuming values are only {true | false}
-        "correct": tokens[2] == "true"
-    }
+@dataclass
+class Click:
+    timestamp: int
+    location: str
+    was_correct: bool
+    event_type: str = EVENT_CLICK
 
+@dataclass
+class CursorPosition:
+    timestamp: int
+    x: int
+    y: int
+    event_type: str = EVENT_CURSOR
 
-def make_cursor_event(tokens: list[str]) -> dict:
-    return {
-        "type": EVENT_CURSOR,
-        "timestamp": int(tokens[0]),
-        "xpos": int(tokens[1]),
-        "ypos": int(tokens[2])
-    }
+@dataclass
+class Keystroke:
+    timestamp: int
+    key: str
+    was_correct: bool
+    event_type: str = EVENT_KEYSTROKE
 
+@dataclass
+class FieldCompletion:
+    timestamp: int
+    field_index: int
+    event_type: str = EVENT_FIELD
 
-def make_keystroke_event(tokens: list[str]) -> dict:
-    return {
-        "type": EVENT_KEYSTROKE,
-        "timestamp": int(tokens[0]),
-        "key": tokens[1],
-        # assuming values are only {true | false}
-        "correct": tokens[2] == "true"
-    }
-
-
-def make_field_event(tokens: list[str]) -> dict:
-    return {
-        "type": EVENT_FIELD,
-        "timestamp": int(tokens[0]),
-        "fieldIndex": int(tokens[1])
-    }
-
-
-def make_task_event(tokens: list[str]) -> dict:
-    return {
-        "type": EVENT_TASK,
-        "timestamp": int(tokens[0])
-        # task indices are never used anyway, all necessary info can reasonably be inferred from elsewhere
-        # "taskIndex": int(tokens[1])
-    }
+@dataclass
+class TaskCompletion:
+    timestamp: int
+    task_index: int
+    event_type: str = EVENT_TASK
 
 
 def generate_statistics(events_flattened: list[dict]) -> dict:
@@ -61,14 +51,9 @@ def generate_statistics(events_flattened: list[dict]) -> dict:
     # you'll want to iterate over this in a particular way
     # i think you can figure it out based on what i already typed up
 
-handlers = {
-    EVENT_CLICK: make_click_event,
-    EVENT_CURSOR: make_cursor_event,
-    EVENT_KEYSTROKE: make_keystroke_event,
-    EVENT_FIELD: make_field_event,
-    EVENT_TASK: make_task_event
-}
 
+def str_to_pybool(s: str) -> bool:
+    return s == "true"
 
 def main(filename: str) -> None:
     events = {
@@ -85,27 +70,60 @@ def main(filename: str) -> None:
             if line == "":
                 continue
             tokens = line.split(";")
-            eventName = tokens[0]
-            eventTokens = tokens[1:]
+            event_name = tokens[0]
+            event_time = int(tokens[1])
+            event_data = tokens[2:]
 
-            evt = handlers[eventName](eventTokens)
-            events[eventName].append(evt)
+            if event_name == EVENT_CLICK:
+                event = Click(event_time, event_data[0], str_to_pybool(event_data[1]))
+            elif event_name == EVENT_CURSOR:
+                event = CursorPosition(event_time, int(event_data[0]), int(event_data[1]))
+            elif event_name == EVENT_KEYSTROKE:
+                event = Keystroke(event_time, event_data[0], str_to_pybool(event_data[1]))
+            elif event_name == EVENT_FIELD:
+                event = FieldCompletion(event_time, int(event_data[0]))
+            elif event_name == EVENT_TASK:
+                event = TaskCompletion(event_time, int(event_data[0]))
+            
+            events[event_name].append(event)
+
 
     # sort events by timestamp
-    # probably not a big deal, they're most likely in order anyway
-    comparator = lambda x: x["timestamp"]
-    events_flattened = []
-    for key, value in events.items():
-        value.sort(key=comparator)
-        for evt in value:
-            events_flattened.append(evt)
-    
-    events_flattened.sort(key=comparator)
-
+    events_chronological = []
+    for _, value in events.items():
+        events_chronological += value
+    events_chronological.sort(key=lambda x: x.timestamp)
 
     import pprint
     pprint.pprint(events, width=140)
-    pprint.pprint(events_flattened, width=140, sort_dicts=False)
+    pprint.pprint(events_chronological, width=140, sort_dicts=False)
+
+    homing_times = []
+    cursor_move_times = []
+    field_wpms = []
+
+    last_text_completion = None
+    last_event_completion = None
+    last_cursor = None
+    for event in events_chronological:
+        if event.event_type == EVENT_FIELD:
+            last_text_completion = event
+        elif event.event_type == EVENT_TASK:
+            last_event_completion = event
+        elif event.event_type == EVENT_CURSOR:
+            if last_cursor is not None:
+                delta_x = event.x - last_cursor.x
+                delta_y = event.y - last_cursor.y
+            
+            last_cursor = event
+
+            if (last_text_completion is not None
+                    and delta_x != 0
+                    and delta_y != 0):
+                homing_times.append()
+
+        
+        
 
 
 if __name__ == "__main__":
