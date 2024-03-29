@@ -94,9 +94,24 @@ def main(filename: str) -> None:
         events_chronological += value
     events_chronological.sort(key=lambda x: x.timestamp)
 
+    # index is the index of the task
+    # the inner lists are the events for that task
+    task_events = [[], []]
+    curr_task = 0
+    for evt in events_chronological:
+        if curr_task == 2:
+            break
+        
+        if type(evt) == TaskCompletion:
+            curr_task += 1
+            continue
+        
+        task_events[curr_task].append(evt)
+
     import pprint
-    pprint.pprint(events, width=140)
-    pprint.pprint(events_chronological, width=140, sort_dicts=False)
+    pprint.pprint(task_events)
+    # pprint.pprint(events, width=140)
+    # pprint.pprint(events_chronological, width=140, sort_dicts=False)
 
     homing_times = []
     cursor_move_times = []
@@ -115,14 +130,16 @@ def main(filename: str) -> None:
                 delta_x = event.x - last_cursor.x
                 delta_y = event.y - last_cursor.y
             
-            last_cursor = event
 
             if (last_text_completion is not None
                     and delta_x != 0
                     and delta_y != 0):
-                homing_times.append()
+                homing_times.append(event.timestamp - last_text_completion.timestamp)
 
-        
+            last_cursor = event
+    
+    # import pprint
+    # pprint.pprint(homing_times)
         
 
 
