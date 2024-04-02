@@ -3,9 +3,9 @@
 #include <Helpers/IsAnyOf.hpp>
 #include <array>
 #include <cstdint>
+#include <mutex>
 #include <string>
 #include <type_traits>
-#include <mutex>
 
 namespace Logging
 {
@@ -57,8 +57,13 @@ struct TaskCompletion
     int taskIndex;
 };
 
-}  // namespace Events
+struct DeviceChanged
+{
+    uint64_t timestampMillis;
+    std::string newDevice;
+};
 
+}  // namespace Events
 
 ///////////////////////////////////////////////////////////////////////////////
 // Logger constants and etc
@@ -67,7 +72,7 @@ constexpr char DELIMITER = ';';
 
 template <typename T>
 concept Loggable = IsAnyOf<T, Events::Click, Events::CursorPosition, Events::Keystroke,
-                           Events::FieldCompletion, Events::TaskCompletion>;
+                           Events::FieldCompletion, Events::TaskCompletion, Events::DeviceChanged>;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Logger class declaration
@@ -98,10 +103,13 @@ class Logger
 ///////////////////////////////////////////////////////////////////////////////
 // Forward template declarations
 ///////////////////////////////////////////////////////////////////////////////
+// TODO: fun fact, this only compiles on MSVC because it relies on a compiler bug!
+//       the template function should be defined at this point, apparently
 template void Logger::Log(Events::Click);
 template void Logger::Log(Events::CursorPosition);
 template void Logger::Log(Events::Keystroke);
 template void Logger::Log(Events::FieldCompletion);
 template void Logger::Log(Events::TaskCompletion);
+template void Logger::Log(Events::DeviceChanged);
 
 }  // namespace Logging

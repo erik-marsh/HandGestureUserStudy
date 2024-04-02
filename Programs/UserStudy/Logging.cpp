@@ -100,6 +100,8 @@ consteval std::string_view EventTypeToString()
         return "FieldCompletion";
     else if constexpr (std::is_same_v<T, Events::TaskCompletion>)
         return "TaskCompletion";
+    else if constexpr (std::is_same_v<T, Events::DeviceChanged>)
+        return "DeviceChanged";
 }
 
 std::string ClickLocationToString(Events::ClickLocation loc)
@@ -161,6 +163,15 @@ std::string SerializeEvent(Events::TaskCompletion event)
     std::stringstream ss;
     ss << std::boolalpha << EventTypeToString<Events::TaskCompletion>() << DELIMITER
        << event.timestampMillis << DELIMITER << event.taskIndex;
+    return ss.str();
+}
+
+template <>
+std::string SerializeEvent(Events::DeviceChanged event)
+{
+    std::stringstream ss;
+    ss << std::boolalpha << EventTypeToString<Events::DeviceChanged>() << DELIMITER
+       << event.timestampMillis << DELIMITER << event.newDevice;
     return ss.str();
 }
 

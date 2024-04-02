@@ -20,6 +20,7 @@
 #include <string>
 
 #include "Logging.hpp"
+#include "CursorLogger.hpp"
 
 namespace Http
 {
@@ -213,6 +214,15 @@ void HttpServerLoop(SyncState& syncState)
                 device = "<UNKNOWN>";
                 syncState.isLeapDriverActive.store(false);
                 break;
+        }
+
+        // Form is assumed to always be the first task
+        if (syncState.isLogging.load() && studyControl.GetState() == Task && studyControl.GetCurrTask() == Form)
+        {
+            syncState.logger.Log(Logging::Events::DeviceChanged{
+                .timestampMillis = Logging::GetCurrentUnixTimeMillis(),
+                .newDevice = device
+            });
         }
 
         std::vector<std::string> strings;

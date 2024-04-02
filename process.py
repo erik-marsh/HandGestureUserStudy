@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from pprint import pprint
 
 # event names
 EVENT_CLICK = "Click"
@@ -6,6 +7,7 @@ EVENT_CURSOR = "CursorPosition"
 EVENT_KEYSTROKE = "Keystroke"
 EVENT_FIELD = "FieldCompletion"
 EVENT_TASK = "TaskCompletion"
+EVENT_DEVICE = "DeviceChanged"
 
 
 @dataclass
@@ -41,6 +43,12 @@ class TaskCompletion:
     task_index: int
     event_type: str = EVENT_TASK
 
+@dataclass
+class DeviceChanged:
+    timestamp: int
+    device: str
+    event_type: str = EVENT_DEVICE
+
 
 def generate_statistics(events_flattened: list[dict]) -> dict:
     currTask = 0
@@ -61,7 +69,8 @@ def main(filename: str) -> None:
         EVENT_CURSOR: [],
         EVENT_KEYSTROKE: [],
         EVENT_FIELD: [],
-        EVENT_TASK: []
+        EVENT_TASK: [],
+        EVENT_DEVICE: []
     }
 
     with open(filename, "r") as logfile:
@@ -84,6 +93,8 @@ def main(filename: str) -> None:
                 event = FieldCompletion(event_time, int(event_data[0]))
             elif event_name == EVENT_TASK:
                 event = TaskCompletion(event_time, int(event_data[0]))
+            elif event_name == EVENT_DEVICE:
+                event = DeviceChanged(event_time, event_data[0])
             
             events[event_name].append(event)
 
@@ -93,6 +104,9 @@ def main(filename: str) -> None:
     for _, value in events.items():
         events_chronological += value
     events_chronological.sort(key=lambda x: x.timestamp)
+
+    type_predicate = lambda type: type is FieldCompletion or type is TaskCompletion or type is DeviceChanged
+    pprint([evt for evt in events_chronological if type_predicate(type(evt))])
 
     # index is the index of the task
     # the inner lists are the events for that task
@@ -108,10 +122,9 @@ def main(filename: str) -> None:
         
         task_events[curr_task].append(evt)
 
-    import pprint
-    pprint.pprint(task_events)
-    # pprint.pprint(events, width=140)
-    # pprint.pprint(events_chronological, width=140, sort_dicts=False)
+    # pprint(task_events)
+    # pprint(events, width=140)
+    # pprint(events_chronological, width=140, sort_dicts=False)
 
     homing_times = []
     cursor_move_times = []
