@@ -1,12 +1,11 @@
 #include "Logging.hpp"
 
 #include <array>
-#include <cassert>
 #include <format>
-#include <fstream>
 #include <iostream>
 #include <sstream>
 #include <string>
+#include <Windows.h>
 
 namespace Logging
 {
@@ -16,9 +15,6 @@ namespace Logging
 ///////////////////////////////////////////////////////////////////////////////
 template <Loggable T>
 consteval std::string_view EventTypeToString();
-
-template <Loggable T>
-std::string SerializeEvent(T event);
 
 std::string ClickLocationToString(Events::ClickLocation loc);
 
@@ -54,39 +50,27 @@ void Logger::OpenLogFile(const std::string& filename)
     hasFilename = true;
 }
 
-template <Loggable T>
-void Logger::Log(T event)
-{
-    std::lock_guard<std::mutex> lock(mutex);
-
-    assert(hasFilename);
-    std::string logLine = SerializeEvent(event);
-
-    // the buffer should not be full at this point
-    auto& buffer = logDoubleBuffer[currBuffer];
-    buffer[currIndex] = logLine;
-
-    currIndex++;
-    if (currIndex == buffer.size())
-    {
-        // buffer is now semantically the backbuffer
-        currBuffer = (currBuffer + 1) % 2;
-        currIndex = 0;
-
-        // write the backbuffer
-        auto openMode = isFileInitialized ? std::ios::app : std::ios::trunc;
-        std::ofstream outFile(logFilename, openMode);
-        for (auto it = buffer.begin(); it != buffer.end(); ++it)
-            outFile << *it << "\n";
-
-        if (!isFileInitialized)
-            isFileInitialized = true;
-    }
-}
-
 ///////////////////////////////////////////////////////////////////////////////
 // Implementations of helper functions
 ///////////////////////////////////////////////////////////////////////////////
+uint64_t GetCurrentUnixTimeMillis()
+{
+    // Number of milliseconds between the "Windows epoch"
+    // (Jan 1, 1601 00:00) and the Unix epoch (Jan 1, 1970 00:00).
+    static constexpr uint64_t windowsEpochToUnixEpochMillis = 11644473600000;
+
+    FILETIME filetime;
+    GetSystemTimeAsFileTime(&filetime);
+
+    ULARGE_INTEGER qwFiletime;
+    qwFiletime.LowPart = filetime.dwLowDateTime;
+    qwFiletime.HighPart = filetime.dwHighDateTime;
+
+    const uint64_t timeSince1601_100ns = static_cast<uint64_t>(qwFiletime.QuadPart);
+    const uint64_t timeSince1601_ms = timeSince1601_100ns / 10000;
+    return timeSince1601_ms - windowsEpochToUnixEpochMillis;
+}
+
 template <Loggable T>
 consteval std::string_view EventTypeToString()
 {

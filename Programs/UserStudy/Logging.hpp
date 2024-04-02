@@ -2,7 +2,9 @@
 
 #include <Helpers/IsAnyOf.hpp>
 #include <array>
+#include <cassert>
 #include <cstdint>
+#include <fstream>
 #include <mutex>
 #include <string>
 #include <type_traits>
@@ -74,6 +76,8 @@ template <typename T>
 concept Loggable = IsAnyOf<T, Events::Click, Events::CursorPosition, Events::Keystroke,
                            Events::FieldCompletion, Events::TaskCompletion, Events::DeviceChanged>;
 
+uint64_t GetCurrentUnixTimeMillis();
+
 ///////////////////////////////////////////////////////////////////////////////
 // Logger class declaration
 ///////////////////////////////////////////////////////////////////////////////
@@ -100,16 +104,37 @@ class Logger
     std::mutex mutex;
 };
 
-///////////////////////////////////////////////////////////////////////////////
-// Forward template declarations
-///////////////////////////////////////////////////////////////////////////////
-// TODO: fun fact, this only compiles on MSVC because it relies on a compiler bug!
-//       the template function should be defined at this point, apparently
-template void Logger::Log(Events::Click);
-template void Logger::Log(Events::CursorPosition);
-template void Logger::Log(Events::Keystroke);
-template void Logger::Log(Events::FieldCompletion);
-template void Logger::Log(Events::TaskCompletion);
-template void Logger::Log(Events::DeviceChanged);
+template <Loggable T>
+std::string SerializeEvent(T event);
+
+template <Loggable T>
+void Logger::Log(T event)
+{
+    std::lock_guard<std::mutex> lock(mutex);
+
+    assert(hasFilename);
+    std::string logLine = SerializeEvent(event);
+
+    // the buffer should not be full at this point
+    auto& buffer = logDoubleBuffer[currBuffer];
+    buffer[currIndex] = logLine;
+
+    currIndex++;
+    if (currIndex == buffer.size())
+    {
+        // buffer is now semantically the backbuffer
+        currBuffer = (currBuffer + 1) % 2;
+        currIndex = 0;
+
+        // write the backbuffer
+        auto openMode = isFileInitialized ? std::ios::app : std::ios::trunc;
+        std::ofstream outFile(logFilename, openMode);
+        for (auto it = buffer.begin(); it != buffer.end(); ++it)
+            outFile << *it << "\n";
+
+        if (!isFileInitialized)
+            isFileInitialized = true;
+    }
+}
 
 }  // namespace Logging
